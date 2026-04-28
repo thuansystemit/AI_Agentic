@@ -1,0 +1,75 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit document' : 'New document' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <app-field
+      label="Title"
+      [control]="form.get('title')!"
+      placeholder="Document title"
+      [errors]="{ required: 'Title is required.' }" />
+
+    <!-- File upload zone -->
+    <div class="upload-section">
+      <label class="form-label fw-medium">
+        File
+        @if (isEdit) {
+          <span class="upload-hint">— re-upload to replace the current file (optional)</span>
+        }
+      </label>
+
+      <input
+        #fileInput
+        type="file"
+        class="d-none"
+        [accept]="acceptAttr"
+        (change)="onFileInputChange($event)" />
+
+      @if (!selectedFile()) {
+        <div
+          class="drop-zone"
+          [class.drop-zone--active]="dragOver()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)">
+          <mat-icon class="drop-zone__icon">cloud_upload</mat-icon>
+          <p class="drop-zone__text">Drag &amp; drop a file here</p>
+          <button type="button" mat-stroked-button (click)="browseFiles()">Browse</button>
+          <p class="drop-zone__hint">Supported: {{ allowedTypesLabel }} &nbsp;·&nbsp; Max 50 MB</p>
+        </div>
+      }
+
+      @if (selectedFile()) {
+        <div class="file-preview">
+          <div class="file-preview__info">
+            <mat-icon class="file-preview__icon">insert_drive_file</mat-icon>
+            <div class="file-preview__meta">
+              <span class="file-preview__name">{{ selectedFile()!.name }}</span>
+              <span class="file-preview__size">{{ formatFileSize(selectedFile()!.size) }}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            mat-icon-button
+            (click)="clearFile()"
+            matTooltip="Remove file"
+            matTooltipPosition="above"
+            aria-label="Remove selected file">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      }
+
+      @if (fileError()) {
+        <div class="invalid-feedback d-block">{{ fileError() }}</div>
+      }
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button mat-dialog-close>Cancel</button>
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="loading() || !!fileError()">
+    <mat-icon>save</mat-icon>
+    {{ isEdit ? 'Save changes' : 'Upload document' }}
+  </button>
+</mat-dialog-actions>

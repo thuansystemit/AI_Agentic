@@ -1,0 +1,195 @@
+<h2 mat-dialog-title>Permissions — {{ data.name }}</h2>
+
+<mat-dialog-content>
+  <mat-tab-group (selectedIndexChange)="selectedTab = $event">
+
+    <!-- Users tab -->
+    <mat-tab label="Users">
+      <div class="tab-content">
+
+        <div class="row g-2 align-items-end mb-3">
+          <div class="col">
+            <label class="field-label">User</label>
+            <div class="search-wrap">
+              <mat-icon class="search-icon">person_search</mat-icon>
+              <input class="form-control search-input" [formControl]="userSearchCtrl"
+                     [matAutocomplete]="userAuto"
+                     placeholder="Search by name or email…" />
+            </div>
+            <mat-autocomplete #userAuto="matAutocomplete"
+                              [displayWith]="displayUser"
+                              (optionSelected)="selectedUser.set($event.option.value)">
+              @for (u of filteredUsers(); track u.id) {
+                <mat-option [value]="u">{{ u.fullName }} ({{ u.email }})</mat-option>
+              }
+            </mat-autocomplete>
+          </div>
+
+          <div class="col-auto perm-col">
+            <label class="field-label">Permission</label>
+            <button type="button" class="perm-trigger" [matMenuTriggerFor]="userPermMenu">
+              <span class="perm-chip perm-{{ newUserPermCtrl.value?.toLowerCase() }}">
+                {{ newUserPermCtrl.value }}
+              </span>
+              <mat-icon class="trigger-caret">expand_more</mat-icon>
+            </button>
+            <mat-menu #userPermMenu="matMenu" class="perm-menu">
+              <button mat-menu-item (click)="newUserPermCtrl.setValue('READ')">
+                <span class="perm-chip perm-read">READ</span>
+              </button>
+              <button mat-menu-item (click)="newUserPermCtrl.setValue('WRITE')">
+                <span class="perm-chip perm-write">WRITE</span>
+              </button>
+              <button mat-menu-item (click)="newUserPermCtrl.setValue('EDIT')">
+                <span class="perm-chip perm-edit">EDIT</span>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+
+        <table mat-table [dataSource]="userPerms()" class="perm-table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>User</th>
+            <td mat-cell *matCellDef="let e">
+              <div class="perm-name-cell">
+                <div class="perm-avatar">{{ e.name.charAt(0).toUpperCase() }}</div>
+                {{ e.name }}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="permission">
+            <th mat-header-cell *matHeaderCellDef>Permission</th>
+            <td mat-cell *matCellDef="let e">
+              <span class="perm-chip perm-{{ e.permission.toLowerCase() }}">{{ e.permission }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let e" class="actions-col">
+              <button mat-icon-button color="warn" (click)="removeUserPermission(e)"
+                      matTooltip="Remove permission" matTooltipPosition="above">
+                <mat-icon>person_remove</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="noData">
+            <td mat-footer-cell *matFooterCellDef [colSpan]="permColumns.length">
+              <div class="perm-empty">
+                <mat-icon>no_accounts</mat-icon>
+                <span>No user permissions set yet</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="permColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: permColumns;"></tr>
+          <tr mat-footer-row *matFooterRowDef="['noData']" [class.hidden]="userPerms().length > 0"></tr>
+        </table>
+
+      </div>
+    </mat-tab>
+
+    <!-- Groups tab -->
+    <mat-tab label="Groups">
+      <div class="tab-content">
+
+        <div class="row g-2 align-items-end mb-3">
+          <div class="col">
+            <label class="field-label">Group</label>
+            <div class="search-wrap">
+              <mat-icon class="search-icon">group_search</mat-icon>
+              <input class="form-control search-input" [formControl]="groupSearchCtrl"
+                     [matAutocomplete]="groupAuto"
+                     placeholder="Search by group name…" />
+            </div>
+            <mat-autocomplete #groupAuto="matAutocomplete"
+                              [displayWith]="displayGroup"
+                              (optionSelected)="selectedGroup.set($event.option.value)">
+              @for (g of filteredGroups(); track g.id) {
+                <mat-option [value]="g">{{ g.name }}</mat-option>
+              }
+            </mat-autocomplete>
+          </div>
+
+          <div class="col-auto perm-col">
+            <label class="field-label">Permission</label>
+            <button type="button" class="perm-trigger" [matMenuTriggerFor]="groupPermMenu">
+              <span class="perm-chip perm-{{ newGroupPermCtrl.value?.toLowerCase() }}">
+                {{ newGroupPermCtrl.value }}
+              </span>
+              <mat-icon class="trigger-caret">expand_more</mat-icon>
+            </button>
+            <mat-menu #groupPermMenu="matMenu" class="perm-menu">
+              <button mat-menu-item (click)="newGroupPermCtrl.setValue('READ')">
+                <span class="perm-chip perm-read">READ</span>
+              </button>
+              <button mat-menu-item (click)="newGroupPermCtrl.setValue('WRITE')">
+                <span class="perm-chip perm-write">WRITE</span>
+              </button>
+              <button mat-menu-item (click)="newGroupPermCtrl.setValue('EDIT')">
+                <span class="perm-chip perm-edit">EDIT</span>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+
+        <table mat-table [dataSource]="groupPerms()" class="perm-table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Group</th>
+            <td mat-cell *matCellDef="let e">
+              <div class="perm-name-cell">
+                <div class="perm-avatar perm-avatar--group">
+                  <mat-icon>groups</mat-icon>
+                </div>
+                {{ e.name }}
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="permission">
+            <th mat-header-cell *matHeaderCellDef>Permission</th>
+            <td mat-cell *matCellDef="let e">
+              <span class="perm-chip perm-{{ e.permission.toLowerCase() }}">{{ e.permission }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let e" class="actions-col">
+              <button mat-icon-button color="warn" (click)="removeGroupPermission(e)"
+                      matTooltip="Remove permission" matTooltipPosition="above">
+                <mat-icon>group_remove</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="noData">
+            <td mat-footer-cell *matFooterCellDef [colSpan]="permColumns.length">
+              <div class="perm-empty">
+                <mat-icon>group_off</mat-icon>
+                <span>No group permissions set yet</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="permColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: permColumns;"></tr>
+          <tr mat-footer-row *matFooterRowDef="['noData']" [class.hidden]="groupPerms().length > 0"></tr>
+        </table>
+
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button mat-dialog-close>Close</button>
+  <button mat-raised-button color="primary" (click)="addPermission()" [disabled]="!canAdd">
+    <mat-icon>add</mat-icon>
+    Add permission
+  </button>
+</mat-dialog-actions>

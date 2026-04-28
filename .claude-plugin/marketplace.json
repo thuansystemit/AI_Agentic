@@ -1,0 +1,11 @@
+{
+  "id": "ai-agentic",
+  "name": "AI Agentic Framework",
+  "author": "thuanvan",
+  "version": "1.0.0",
+  "description": "A production-ready Claude Code agent framework. Includes 15 specialized subagents for planning, review, testing, and build resolution — plus 4 skill libraries covering backend, frontend, AI, and coding standards.",
+  "tags": ["agents", "code-review", "planning", "testing", "productivity"],
+  "install": "claude plugin add ai-agentic",
+  "homepage": "",
+  "categories": ["developer-tools", "code-quality", "automation"]
+}

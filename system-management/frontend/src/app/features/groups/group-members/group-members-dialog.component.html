@@ -1,0 +1,45 @@
+<h2 mat-dialog-title>Members — {{ data.name }}</h2>
+
+<mat-dialog-content>
+  <div class="search-wrap">
+    <label class="field-label">Add user</label>
+    <input class="form-control" [formControl]="userSearchCtrl"
+           [matAutocomplete]="auto"
+           placeholder="Search by name or email…" />
+    <mat-autocomplete #auto="matAutocomplete"
+                      [displayWith]="displayUser"
+                      (optionSelected)="addMember($event.option.value)">
+      @for (user of filteredUsers(); track user.id) {
+        <mat-option [value]="user">{{ user.fullName }} ({{ user.email }})</mat-option>
+      }
+    </mat-autocomplete>
+  </div>
+
+  <mat-list class="members-list">
+    @for (member of members(); track member.id) {
+      <mat-list-item>
+        <div class="member-avatar" matListItemAvatar>
+          {{ member.fullName.charAt(0).toUpperCase() }}
+        </div>
+        <span matListItemTitle>{{ member.fullName }}</span>
+        <span matListItemLine>{{ member.email }}</span>
+        <button matListItemMeta mat-icon-button color="warn"
+                (click)="removeMember(member)"
+                matTooltip="Remove member">
+          <mat-icon>person_remove</mat-icon>
+        </button>
+      </mat-list-item>
+    }
+
+    @if (members().length === 0) {
+      <div class="empty-members">
+        <mat-icon>group_off</mat-icon>
+        <p>No members yet. Search above to add users to this group.</p>
+      </div>
+    }
+  </mat-list>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Close</button>
+</mat-dialog-actions>

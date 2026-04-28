@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>{{ data ? 'Edit category' : 'New category' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <app-field
+      label="Category name"
+      [control]="form.get('name')!"
+      [errors]="{ required: 'Category name is required.', minlength: 'Minimum 2 characters required.' }" />
+
+    <app-field
+      label="Description"
+      type="textarea"
+      [control]="form.get('description')!"
+      [rows]="3"
+      placeholder="Describe what this category contains…" />
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button mat-dialog-close>Cancel</button>
+  <button mat-raised-button color="primary" (click)="save()">
+    {{ data ? 'Save changes' : 'Create category' }}
+  </button>
+</mat-dialog-actions>

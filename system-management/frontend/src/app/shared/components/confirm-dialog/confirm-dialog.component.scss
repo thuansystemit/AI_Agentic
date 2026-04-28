@@ -1,0 +1,47 @@
+.confirm-wrapper {
+  padding: 24px 8px 8px;
+  max-width: 400px;
+  text-align: center;
+}
+
+.warn-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fff8e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  border: 2px solid #ffe082;
+}
+
+.warn-icon {
+  font-size: 36px;
+  width: 36px;
+  height: 36px;
+  color: #f57c00;
+  display: block;
+}
+
+[mat-dialog-title] {
+  text-align: center;
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+  display: block;
+}
+
+mat-dialog-content p {
+  text-align: center;
+  color: #6b7280;
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+mat-dialog-actions {
+  padding-top: 24px !important;
+  justify-content: center !important;
+  gap: 12px !important;
+}

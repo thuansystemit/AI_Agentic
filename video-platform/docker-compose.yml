@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: vp-postgres
+    environment:
+      POSTGRES_DB: videoplatform
+      POSTGRES_USER: videoplatform
+      POSTGRES_PASSWORD: videoplatform
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U videoplatform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vp-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: videoplatform
+      DB_USERNAME: videoplatform
+      DB_PASSWORD: videoplatform
+      JWT_SECRET: change-this-in-production-must-be-at-least-256-bits-long-for-hs256-algorithm
+      UPLOAD_DIR: /app/uploads/videos
+      CORS_ORIGINS: http://localhost:4200
+    volumes:
+      - video_uploads:/app/uploads/videos
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vp-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  video_uploads:

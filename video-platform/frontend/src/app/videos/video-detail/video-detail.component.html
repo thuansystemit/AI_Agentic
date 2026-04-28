@@ -1,0 +1,78 @@
+@if (loading()) {
+  <div class="loading">Loading video...</div>
+} @else if (error()) {
+  <div class="error-page">
+    <div class="alert alert-error">{{ error() }}</div>
+    <a routerLink="/" class="btn btn-secondary">Back to Browse</a>
+  </div>
+} @else if (video(); as v) {
+  <div class="video-detail">
+    <div class="video-player-container">
+      <video
+        class="video-player"
+        controls
+        [src]="getStreamUrl()"
+        [attr.type]="v.contentType"
+        preload="metadata"
+      >
+        Your browser does not support the video tag.
+      </video>
+    </div>
+
+    <div class="video-content">
+      @if (editing()) {
+        <div class="edit-form">
+          <div class="form-group">
+            <label class="form-label" for="editTitle">Title</label>
+            <input
+              class="form-input"
+              type="text"
+              id="editTitle"
+              [(ngModel)]="editTitle"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editDescription">Description</label>
+            <textarea
+              class="form-input"
+              id="editDescription"
+              [(ngModel)]="editDescription"
+              rows="4"
+            ></textarea>
+          </div>
+          <div class="edit-actions">
+            <button class="btn btn-primary" (click)="saveEdit()">Save</button>
+            <button class="btn btn-secondary" (click)="cancelEdit()">Cancel</button>
+          </div>
+        </div>
+      } @else {
+        <h1 class="video-title">{{ v.title }}</h1>
+
+        <div class="video-meta">
+          <span class="video-owner">Uploaded by {{ v.owner.username }}</span>
+          <span class="video-date">{{ formatDate(v.createdAt) }}</span>
+          <span class="video-size">{{ formatFileSize(v.fileSize) }}</span>
+        </div>
+
+        @if (v.description) {
+          <p class="video-description">{{ v.description }}</p>
+        }
+
+        @if (isOwner()) {
+          <div class="owner-actions">
+            <button class="btn btn-secondary" (click)="startEdit()">Edit</button>
+            @if (confirmDelete()) {
+              <span class="delete-confirm">
+                Are you sure?
+                <button class="btn btn-danger" (click)="deleteVideo()">Yes, Delete</button>
+                <button class="btn btn-secondary" (click)="confirmDelete.set(false)">Cancel</button>
+              </span>
+            } @else {
+              <button class="btn btn-danger" (click)="confirmDelete.set(true)">Delete</button>
+            }
+          </div>
+        }
+      }
+    </div>
+  </div>
+}

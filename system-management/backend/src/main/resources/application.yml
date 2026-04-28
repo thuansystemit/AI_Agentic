@@ -1,0 +1,49 @@
+server:
+  port: 8080
+  error:
+    include-stacktrace: never
+    include-message: never
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/system_management}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 52MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  info:
+    env:
+      enabled: false
+    git:
+      mode: simple
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:darknesssystemmanagementstrongkey2026xx}
+    access-token-ttl-minutes: 15
+    refresh-token-ttl-days: 7
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  cookie:
+    # Set to true in production (requires HTTPS). Keep false for local HTTP dev.
+    secure: ${COOKIE_SECURE:false}
+
+logging:
+  level:
+    com.darkness.system.management: DEBUG
+    org.springframework.security: INFO

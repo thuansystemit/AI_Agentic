@@ -1,0 +1,41 @@
+<div class="my-videos-page">
+  <div class="page-header">
+    <h1 class="page-title">My Videos</h1>
+    <a routerLink="/upload" class="btn btn-primary">Upload New Video</a>
+  </div>
+
+  @if (loading()) {
+    <div class="loading">Loading your videos...</div>
+  } @else if (videos().length === 0) {
+    <div class="empty-state">
+      <h3>You have not uploaded any videos yet</h3>
+      <p>Share your first video with the world!</p>
+      <a routerLink="/upload" class="btn btn-primary" style="margin-top: 1rem">Upload Video</a>
+    </div>
+  } @else {
+    <div class="results-info">
+      <span>{{ totalElements() }} video{{ totalElements() !== 1 ? 's' : '' }}</span>
+    </div>
+    <div class="video-grid">
+      @for (video of videos(); track video.id) {
+        <app-video-card [video]="video"></app-video-card>
+      }
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="btn btn-secondary" (click)="prevPage()" [disabled]="currentPage() === 0">
+          Previous
+        </button>
+        <span class="page-info">Page {{ currentPage() + 1 }} of {{ totalPages() }}</span>
+        <button
+          class="btn btn-secondary"
+          (click)="nextPage()"
+          [disabled]="currentPage() >= totalPages() - 1"
+        >
+          Next
+        </button>
+      </div>
+    }
+  }
+</div>

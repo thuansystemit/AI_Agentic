@@ -1,0 +1,24 @@
+<header class="header">
+  <div class="header-container">
+    <a routerLink="/" class="logo">VideoPlatform</a>
+
+    <nav class="nav-links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Browse</a>
+
+      @if (authService.isLoggedIn()) {
+        <a routerLink="/upload" routerLinkActive="active">Upload</a>
+        <a routerLink="/my-videos" routerLinkActive="active">My Videos</a>
+      }
+    </nav>
+
+    <div class="auth-section">
+      @if (authService.isLoggedIn()) {
+        <span class="username">{{ authService.currentUser()?.username }}</span>
+        <button class="btn btn-outline" (click)="logout()">Logout</button>
+      } @else {
+        <a routerLink="/login" class="btn btn-outline">Login</a>
+        <a routerLink="/register" class="btn btn-primary">Register</a>
+      }
+    </div>
+  </div>
+</header>

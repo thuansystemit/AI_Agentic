@@ -1,0 +1,100 @@
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+}
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a routerLink="/categories">Categories</a>
+  <span class="sep">›</span>
+  <span>{{ category()?.name || '…' }}</span>
+</nav>
+
+<div class="page-header">
+  <h2 class="page-title">
+    <mat-icon>description</mat-icon>
+    {{ category()?.name || 'Documents' }}
+  </h2>
+  <button mat-raised-button color="primary" (click)="openCreate()">
+    <mat-icon>note_add</mat-icon> New Document
+  </button>
+</div>
+
+@if (category()?.description) {
+  <p class="category-desc">{{ category()!.description }}</p>
+}
+
+<mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+  <mat-label>Search documents</mat-label>
+  <mat-icon matPrefix>search</mat-icon>
+  <input matInput [formControl]="searchCtrl" placeholder="Document title…" />
+  @if (searchCtrl.value) {
+    <button matSuffix mat-icon-button (click)="searchCtrl.setValue('')" aria-label="Clear search">
+      <mat-icon>close</mat-icon>
+    </button>
+  }
+</mat-form-field>
+
+<table mat-table [dataSource]="documents()" class="mat-elevation-z1 full-width docs-table">
+
+  <ng-container matColumnDef="title">
+    <th mat-header-cell *matHeaderCellDef>Title</th>
+    <td mat-cell *matCellDef="let d">
+      <div class="doc-cell">
+        <mat-icon class="doc-icon">insert_drive_file</mat-icon>
+        <div>
+          <div class="doc-title">{{ d.title }}</div>
+          @if (d.content) {
+            <div class="doc-preview">{{ d.content | slice:0:90 }}{{ d.content.length > 90 ? '…' : '' }}</div>
+          }
+        </div>
+      </div>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="updatedAt">
+    <th mat-header-cell *matHeaderCellDef>Last updated</th>
+    <td mat-cell *matCellDef="let d" class="date-cell">
+      <span [matTooltip]="d.updatedAt | date:'full'">{{ d.updatedAt | date:'mediumDate' }}</span>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef class="actions-col"></th>
+    <td mat-cell *matCellDef="let d" class="actions-col">
+      <div class="action-buttons">
+        <button mat-icon-button (click)="openEdit(d)"
+                matTooltip="Edit document" matTooltipPosition="above">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="deleteDocument(d)"
+                matTooltip="Delete document" matTooltipPosition="above">
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+      </div>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="noData">
+    <td mat-footer-cell *matFooterCellDef [colSpan]="displayedColumns.length">
+      @if (!isLoading() && documents().length === 0) {
+        <div class="empty-state">
+          <mat-icon class="empty-icon">article</mat-icon>
+          <h3>No documents yet</h3>
+          <p>{{ searchCtrl.value ? 'No results for "' + searchCtrl.value + '". Try a different search.' : 'Add the first document to this category.' }}</p>
+          @if (!searchCtrl.value) {
+            <button mat-raised-button color="primary" (click)="openCreate()">
+              <mat-icon>note_add</mat-icon> Add first document
+            </button>
+          }
+        </div>
+      }
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row"></tr>
+  <tr mat-footer-row *matFooterRowDef="['noData']" [class.hidden]="documents().length > 0"></tr>
+</table>
+
+<mat-paginator [length]="totalElements()" [pageSize]="pageSize"
+               [pageSizeOptions]="[10, 25, 50]" (page)="onPage($event)"
+               showFirstLastButtons />

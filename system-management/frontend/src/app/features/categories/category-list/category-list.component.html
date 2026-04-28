@@ -1,0 +1,64 @@
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+}
+
+<div class="page-header">
+  <h2 class="page-title">
+    <mat-icon>folder_open</mat-icon>
+    Categories
+  </h2>
+  @if (auth.isAdmin()) {
+    <button mat-raised-button color="primary" (click)="openCreate()">
+      <mat-icon>add</mat-icon> New Category
+    </button>
+  }
+</div>
+
+@if (!isLoading() && categories().length === 0) {
+  <div class="empty-state">
+    <mat-icon class="empty-icon">folder_open</mat-icon>
+    <h3>No categories yet</h3>
+    <p>Categories organise your documents. Create your first category to get started.</p>
+    @if (auth.isAdmin()) {
+      <button mat-raised-button color="primary" (click)="openCreate()">
+        <mat-icon>add</mat-icon> Create first category
+      </button>
+    }
+  </div>
+}
+
+<div class="card-grid">
+  @for (cat of categories(); track cat.id) {
+    <mat-card class="cat-card" appearance="outlined">
+      <div class="cat-card-accent"></div>
+      <mat-card-header>
+        <div mat-card-avatar class="cat-avatar">
+          <mat-icon>folder</mat-icon>
+        </div>
+        <mat-card-title>{{ cat.name }}</mat-card-title>
+        <mat-card-subtitle>{{ cat.description || 'No description' }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-actions>
+        <button mat-button color="primary" (click)="openDocuments(cat)">
+          <mat-icon>description</mat-icon> Open documents
+        </button>
+        <span class="card-action-spacer"></span>
+        @if (auth.isAdmin()) {
+          <button mat-icon-button (click)="openPermissions(cat)"
+                  matTooltip="Manage permissions" matTooltipPosition="above">
+            <mat-icon>security</mat-icon>
+          </button>
+          <button mat-icon-button (click)="openEdit(cat)"
+                  matTooltip="Edit category" matTooltipPosition="above">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="deleteCategory(cat)"
+                  matTooltip="Delete category" matTooltipPosition="above">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        }
+      </mat-card-actions>
+    </mat-card>
+  }
+</div>

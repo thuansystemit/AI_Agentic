@@ -1,0 +1,18 @@
+<div class="confirm-wrapper">
+  <div class="warn-icon-wrap">
+    <mat-icon class="warn-icon">warning_amber</mat-icon>
+  </div>
+  <h2 mat-dialog-title>{{ data.title }}</h2>
+  <mat-dialog-content>
+    <p>{{ data.message }}</p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button [mat-dialog-close]="false">
+      Cancel
+    </button>
+    <button mat-raised-button [color]="data.confirmColor || 'warn'" [mat-dialog-close]="true">
+      <mat-icon>{{ (data.confirmColor === 'primary') ? 'check' : 'delete_forever' }}</mat-icon>
+      {{ data.confirmText || 'Delete' }}
+    </button>
+  </mat-dialog-actions>
+</div>

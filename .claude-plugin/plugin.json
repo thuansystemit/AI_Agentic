@@ -1,0 +1,278 @@
+{
+  "name": "ai-agentic",
+  "version": "2.1.0",
+  "description": "A full SDLC Claude Code agent framework — 32 specialized agents covering every phase from discovery to operations, each assigned an optimal LLM model, plus 4 skill libraries.",
+  "agents": [
+    {
+      "name": "architect",
+      "path": "agents/architect.md",
+      "description": "System design decisions and trade-off analysis",
+      "model": "claude-opus-4-6",
+      "temperature": 0.3,
+      "max_tokens": 8192
+    },
+    {
+      "name": "security-reviewer",
+      "path": "agents/security-reviewer.md",
+      "description": "Vulnerability analysis — OWASP, CVSS, remediation",
+      "model": "claude-opus-4-6",
+      "temperature": 0.3,
+      "max_tokens": 8192
+    },
+    {
+      "name": "white-hacker",
+      "path": "agents/white-hacker.md",
+      "description": "Ethical penetration testing, vulnerability assessment, and security reports",
+      "model": "claude-opus-4-6",
+      "temperature": 0.3,
+      "max_tokens": 8192
+    },
+    {
+      "name": "grey-hacker",
+      "path": "agents/grey-hacker.md",
+      "description": "Bug bounty hunting, vulnerability chaining, and responsible disclosure",
+      "model": "claude-opus-4-6",
+      "temperature": 0.4,
+      "max_tokens": 8192
+    },
+    {
+      "name": "requirements-analyst",
+      "path": "agents/requirements-analyst.md",
+      "description": "Formal specs, edge cases, and Gherkin acceptance criteria",
+      "model": "claude-opus-4-6",
+      "temperature": 0.3,
+      "max_tokens": 8192
+    },
+    {
+      "name": "data-modeler",
+      "path": "agents/data-modeler.md",
+      "description": "Database schema design, ERDs, and migration strategy",
+      "model": "claude-opus-4-6",
+      "temperature": 0.3,
+      "max_tokens": 8192
+    },
+    {
+      "name": "performance-tester",
+      "path": "agents/performance-tester.md",
+      "description": "Load testing, bottleneck analysis, and SLO definition",
+      "model": "claude-opus-4-6",
+      "temperature": 0.3,
+      "max_tokens": 8192
+    },
+    {
+      "name": "code-reviewer",
+      "path": "agents/code-reviewer.md",
+      "description": "Multi-dimension code review — correctness, security, performance",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "java-developer",
+      "path": "agents/java-developer.md",
+      "description": "Java development, Spring Boot, and JVM expertise",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "typescript-reviewer",
+      "path": "agents/typescript-reviewer.md",
+      "description": "TypeScript/JavaScript code review and React patterns",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "go-reviewer",
+      "path": "agents/go-reviewer.md",
+      "description": "Go code review — concurrency, idioms, error handling",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "python-reviewer",
+      "path": "agents/python-reviewer.md",
+      "description": "Python code review — PEP 8, mypy, pytest patterns",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "api-designer",
+      "path": "agents/api-designer.md",
+      "description": "Contract-first API design and OpenAPI 3.x specs",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "tdd-guide",
+      "path": "agents/tdd-guide.md",
+      "description": "Test-driven development coaching and test generation",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "incident-responder",
+      "path": "agents/incident-responder.md",
+      "description": "Incident triage, runbooks, and stakeholder communications",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.3,
+      "max_tokens": 4096
+    },
+    {
+      "name": "chief-of-staff",
+      "path": "agents/chief-of-staff.md",
+      "description": "PR descriptions, postmortems, and stakeholder communication drafts",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.6,
+      "max_tokens": 4096
+    },
+    {
+      "name": "product-manager",
+      "path": "agents/product-manager.md",
+      "description": "User stories, feature specs, and backlog prioritization",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "qa-engineer",
+      "path": "agents/qa-engineer.md",
+      "description": "Test planning, test cases, and defect reporting",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "devops-engineer",
+      "path": "agents/devops-engineer.md",
+      "description": "CI/CD pipelines, Docker, and deployment strategies",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.4,
+      "max_tokens": 4096
+    },
+    {
+      "name": "release-manager",
+      "path": "agents/release-manager.md",
+      "description": "Versioning, changelogs, release checklists, and rollback plans",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.4,
+      "max_tokens": 4096
+    },
+    {
+      "name": "observability-engineer",
+      "path": "agents/observability-engineer.md",
+      "description": "Logging, metrics, distributed tracing, and alerting",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.4,
+      "max_tokens": 4096
+    },
+    {
+      "name": "planner",
+      "path": "agents/planner.md",
+      "description": "Feature implementation planning and task ordering",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "estimator",
+      "path": "agents/estimator.md",
+      "description": "Task decomposition, story points, and risk identification",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.5,
+      "max_tokens": 4096
+    },
+    {
+      "name": "ux-designer",
+      "path": "agents/ux-designer.md",
+      "description": "User flows, component states, and UX copy",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.6,
+      "max_tokens": 4096
+    },
+    {
+      "name": "e2e-runner",
+      "path": "agents/e2e-runner.md",
+      "description": "Playwright end-to-end test generation",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.4,
+      "max_tokens": 4096
+    },
+    {
+      "name": "build-error-resolver",
+      "path": "agents/build-error-resolver.md",
+      "description": "Build and CI error diagnosis and fix",
+      "model": "claude-haiku-4-5-20251001",
+      "temperature": 0.1,
+      "max_tokens": 2048
+    },
+    {
+      "name": "docs-updater",
+      "path": "agents/docs-updater.md",
+      "description": "Documentation sync — README, API docs, changelogs",
+      "model": "claude-haiku-4-5-20251001",
+      "temperature": 0.1,
+      "max_tokens": 2048
+    },
+    {
+      "name": "refactor-cleaner",
+      "path": "agents/refactor-cleaner.md",
+      "description": "Dead code cleanup and safe refactoring",
+      "model": "claude-haiku-4-5-20251001",
+      "temperature": 0.1,
+      "max_tokens": 2048
+    },
+    {
+      "name": "tech-debt-tracker",
+      "path": "agents/tech-debt-tracker.md",
+      "description": "Debt identification, scoring, and pay-down planning",
+      "model": "claude-haiku-4-5-20251001",
+      "temperature": 0.1,
+      "max_tokens": 2048
+    },
+    {
+      "name": "retrospective-facilitator",
+      "path": "agents/retrospective-facilitator.md",
+      "description": "Sprint retros, action items, and team health",
+      "model": "claude-haiku-4-5-20251001",
+      "temperature": 0.2,
+      "max_tokens": 2048
+    },
+    {
+      "name": "loop-operator",
+      "path": "agents/loop-operator.md",
+      "description": "Autonomous multi-step task execution and coordination",
+      "model": "claude-haiku-4-5-20251001",
+      "temperature": 0.1,
+      "max_tokens": 2048
+    },
+    {
+      "name": "database-reviewer",
+      "path": "agents/database-reviewer.md",
+      "description": "SQL, ORM, schema, and migration safety review",
+      "model": "claude-haiku-4-5-20251001",
+      "temperature": 0.1,
+      "max_tokens": 2048
+    },
+    {
+      "name": "llm-cost-estimator",
+      "path": "agents/llm-cost-estimator.md",
+      "description": "Estimates token consumption and API cost per agent, phase, and full project",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.3,
+      "max_tokens": 4096
+    }
+
+  ],
+  "skills": [
+    { "name": "coding-standards",  "path": "skills/coding-standards/",  "description": "Language best practices" },
+    { "name": "backend-patterns",  "path": "skills/backend-patterns/",  "description": "API, database, caching patterns" },
+    { "name": "frontend-patterns", "path": "skills/frontend-patterns/", "description": "CSS, Next.js patterns" },
+    { "name": "ai-patterns",       "path": "skills/ai-patterns/",       "description": "LLM, agent, prompt engineering patterns" }
+  ]
+}

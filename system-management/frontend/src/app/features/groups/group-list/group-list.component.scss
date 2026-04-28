@@ -1,0 +1,63 @@
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  mat-icon {
+    color: #1a237e;
+  }
+}
+
+.groups-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-row:hover {
+  background: #f5f7ff;
+}
+
+.group-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.group-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #e8eaf6;
+  color: #3949ab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.group-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.desc-cell {
+  color: #666;
+  font-size: 13px;
+}
+
+.actions-col {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.action-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.hidden td {
+  padding: 0;
+  border: none;
+}

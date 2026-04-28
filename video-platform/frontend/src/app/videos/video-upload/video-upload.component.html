@@ -1,0 +1,76 @@
+<div class="upload-page">
+  <h1 class="page-title">Upload Video</h1>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  <form (ngSubmit)="onSubmit()" class="upload-form">
+    <!-- File Drop Zone -->
+    <div
+      class="drop-zone"
+      [class.drag-over]="dragOver()"
+      [class.has-file]="selectedFile"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave()"
+      (drop)="onDrop($event)"
+    >
+      @if (selectedFile) {
+        <div class="file-info">
+          <div class="file-icon">&#9654;</div>
+          <div class="file-details">
+            <span class="file-name">{{ selectedFile.name }}</span>
+            <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
+          </div>
+          <button type="button" class="remove-file" (click)="removeFile()">x</button>
+        </div>
+      } @else {
+        <div class="drop-zone-content">
+          <div class="drop-icon">&#8679;</div>
+          <p>Drag and drop your video here, or</p>
+          <label class="btn btn-secondary file-label">
+            Choose File
+            <input type="file" accept="video/*" (change)="onFileSelected($event)" hidden />
+          </label>
+          <p class="drop-hint">MP4, WebM, AVI, MOV, MKV -- up to 500MB</p>
+        </div>
+      }
+    </div>
+
+    <!-- Metadata Fields -->
+    <div class="form-group">
+      <label class="form-label" for="title">Title</label>
+      <input
+        class="form-input"
+        type="text"
+        id="title"
+        [(ngModel)]="title"
+        name="title"
+        placeholder="Give your video a title"
+        required
+        maxlength="255"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="description">Description (optional)</label>
+      <textarea
+        class="form-input"
+        id="description"
+        [(ngModel)]="description"
+        name="description"
+        placeholder="Describe your video..."
+        rows="4"
+        maxlength="5000"
+      ></textarea>
+    </div>
+
+    <button
+      class="btn btn-primary btn-upload"
+      type="submit"
+      [disabled]="loading() || !selectedFile"
+    >
+      {{ loading() ? 'Uploading...' : 'Upload Video' }}
+    </button>
+  </form>
+</div>

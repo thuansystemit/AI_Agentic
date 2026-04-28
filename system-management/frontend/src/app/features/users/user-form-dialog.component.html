@@ -1,0 +1,72 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit user' : 'Create user' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+    <div class="row g-3">
+      @if (!isEdit) {
+        <div class="col-md-6">
+          <app-field
+            label="Email address"
+            type="email"
+            [control]="form.get('email')!"
+            autocomplete="email"
+            [errors]="{ required: 'Email address is required.', email: 'Enter a valid email address.' }" />
+        </div>
+        <div class="col-md-6">
+          <app-field
+            label="Password"
+            type="password"
+            [control]="form.get('password')!"
+            autocomplete="new-password"
+            [errors]="{ required: 'Password is required.', minlength: 'Minimum 8 characters required.' }" />
+        </div>
+      }
+
+      <div class="col-12">
+        <app-field
+          label="Full name"
+          [control]="form.get('fullName')!"
+          [errors]="{ required: 'Full name is required.' }" />
+      </div>
+
+      <div class="col-12">
+        <label class="form-label fw-medium">Role</label>
+        <button type="button" class="role-trigger" #roleTriggerBtn
+                [matMenuTriggerFor]="roleMenu" (menuOpened)="onRoleMenuOpened()">
+          <span class="role-chip role-{{ form.get('globalRole')!.value?.toLowerCase() }}">
+            {{ form.get('globalRole')!.value }}
+          </span>
+          <mat-icon class="trigger-caret">expand_more</mat-icon>
+        </button>
+        <mat-menu #roleMenu="matMenu" class="role-menu">
+          <button mat-menu-item (click)="form.get('globalRole')!.setValue('ADMIN')">
+            <span class="role-chip role-admin">ADMIN</span>
+          </button>
+          <button mat-menu-item (click)="form.get('globalRole')!.setValue('EDITOR')">
+            <span class="role-chip role-editor">EDITOR</span>
+          </button>
+          <button mat-menu-item (click)="form.get('globalRole')!.setValue('VIEWER')">
+            <span class="role-chip role-viewer">VIEWER</span>
+          </button>
+        </mat-menu>
+      </div>
+
+      @if (isEdit) {
+        <div class="col-12">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch"
+                   id="isActiveSwitch" formControlName="isActive" />
+            <label class="form-check-label" for="isActiveSwitch">Active account</label>
+          </div>
+        </div>
+      }
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button mat-dialog-close>Cancel</button>
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="loading()">
+    {{ isEdit ? 'Save changes' : 'Create user' }}
+  </button>
+</mat-dialog-actions>

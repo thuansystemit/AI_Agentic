@@ -1,0 +1,37 @@
+<div class="app-field">
+  <label [for]="fieldId" class="form-label">{{ label }}</label>
+
+  @if (type === 'textarea') {
+    <textarea [id]="fieldId" class="form-control" [ngClass]="{ 'is-invalid': !!errorMessage }"
+              [formControl]="fc" [rows]="rows"
+              [placeholder]="placeholder"
+              [attr.autocomplete]="autocomplete || null"></textarea>
+  } @else {
+    <div class="input-group">
+      @if (prefixIcon) {
+        <span class="input-group-text">
+          <mat-icon class="field-icon">{{ prefixIcon }}</mat-icon>
+        </span>
+      }
+      <input [id]="fieldId" class="form-control" [ngClass]="{ 'is-invalid': !!errorMessage }"
+             [formControl]="fc" [type]="inputType"
+             [placeholder]="placeholder"
+             [attr.autocomplete]="autocomplete || null" />
+      @if (type === 'password') {
+        <button class="btn btn-outline-secondary" type="button" tabindex="-1"
+                [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+                (click)="showPassword = !showPassword">
+          <mat-icon class="field-icon">{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+      }
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="invalid-feedback d-block">{{ errorMessage }}</div>
+  }
+
+  @if (hint) {
+    <div class="form-text">{{ hint }}</div>
+  }
+</div>

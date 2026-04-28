@@ -1,0 +1,63 @@
+<div class="login-page">
+  <!-- Left: brand panel -->
+  <div class="brand-panel">
+    <div class="brand-content">
+      <div class="brand-logo">
+        <mat-icon>admin_panel_settings</mat-icon>
+      </div>
+      <h1 class="brand-name">System Management</h1>
+      <p class="brand-tagline">Secure, centralised document and permission management for your organisation.</p>
+      <ul class="feature-list">
+        <li><mat-icon>folder_open</mat-icon> Organise documents by categories</li>
+        <li><mat-icon>groups</mat-icon> Fine-grained group permissions</li>
+        <li><mat-icon>lock</mat-icon> JWT-secured, role-based access</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Right: form panel -->
+  <div class="form-panel">
+    <div class="form-card">
+      <div class="form-header">
+        <mat-icon class="form-logo">admin_panel_settings</mat-icon>
+        <h2>Welcome back</h2>
+        <p>Sign in to your account to continue.</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <app-field
+          label="Email address"
+          type="email"
+          prefixIcon="mail_outline"
+          [control]="form.get('email')!"
+          placeholder="you@example.com"
+          autocomplete="email"
+          [errors]="{ required: 'Email address is required.', email: 'Enter a valid email address.' }" />
+
+        <app-field
+          label="Password"
+          type="password"
+          prefixIcon="lock_outline"
+          [control]="form.get('password')!"
+          autocomplete="current-password"
+          [errors]="{ required: 'Password is required.' }" />
+
+        @if (errorMessage()) {
+          <div class="error-banner" role="alert" aria-live="assertive">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        <button mat-raised-button color="primary" type="submit"
+                class="full-width sign-in-btn" [disabled]="loading()">
+          @if (loading()) {
+            <mat-spinner diameter="20" />
+          } @else {
+            Sign in
+          }
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,100 @@
+@if (isLoading()) {
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+}
+
+<div class="page-header">
+  <h2 class="page-title">
+    <mat-icon>people</mat-icon>
+    Users
+  </h2>
+  <button mat-raised-button color="primary" (click)="openCreate()">
+    <mat-icon>person_add</mat-icon> New User
+  </button>
+</div>
+
+<mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+  <mat-label>Search users</mat-label>
+  <mat-icon matPrefix>search</mat-icon>
+  <input matInput [formControl]="searchCtrl" placeholder="Name or email…" />
+  @if (searchCtrl.value) {
+    <button matSuffix mat-icon-button (click)="searchCtrl.setValue('')" aria-label="Clear search">
+      <mat-icon>close</mat-icon>
+    </button>
+  }
+</mat-form-field>
+
+<table mat-table [dataSource]="users()" class="mat-elevation-z1 full-width users-table">
+
+  <ng-container matColumnDef="fullName">
+    <th mat-header-cell *matHeaderCellDef>Name</th>
+    <td mat-cell *matCellDef="let u">
+      <div class="user-cell">
+        <div class="user-avatar-sm">{{ u.fullName.charAt(0).toUpperCase() }}</div>
+        <div>
+          <div class="user-name">{{ u.fullName }}</div>
+          <div class="user-email-sub">{{ u.email }}</div>
+        </div>
+      </div>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="globalRole">
+    <th mat-header-cell *matHeaderCellDef>Role</th>
+    <td mat-cell *matCellDef="let u">
+      <span class="role-chip"
+            [class.role-admin]="u.globalRole === 'ADMIN'"
+            [class.role-editor]="u.globalRole === 'EDITOR'"
+            [class.role-viewer]="u.globalRole === 'VIEWER'">
+        {{ u.globalRole }}
+      </span>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="status">
+    <th mat-header-cell *matHeaderCellDef>Status</th>
+    <td mat-cell *matCellDef="let u">
+      <span class="role-chip"
+            [class.role-active]="u.isActive"
+            [class.role-inactive]="!u.isActive">
+        <mat-icon class="status-dot">{{ u.isActive ? 'check_circle' : 'cancel' }}</mat-icon>
+        {{ u.isActive ? 'Active' : 'Inactive' }}
+      </span>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef class="actions-col"></th>
+    <td mat-cell *matCellDef="let u" class="actions-col">
+      <div class="action-buttons">
+        <button mat-icon-button (click)="openEdit(u)"
+                matTooltip="Edit user" matTooltipPosition="above">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="deleteUser(u)"
+                matTooltip="Delete user" matTooltipPosition="above">
+          <mat-icon>delete_outline</mat-icon>
+        </button>
+      </div>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="noData">
+    <td mat-footer-cell *matFooterCellDef [colSpan]="displayedColumns.length">
+      @if (!isLoading() && users().length === 0) {
+        <div class="empty-state">
+          <mat-icon class="empty-icon">people_outline</mat-icon>
+          <h3>No users found</h3>
+          <p>{{ searchCtrl.value ? 'Try a different search term.' : 'Create the first user to get started.' }}</p>
+        </div>
+      }
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row"></tr>
+  <tr mat-footer-row *matFooterRowDef="['noData']" [class.hidden]="users().length > 0"></tr>
+</table>
+
+<mat-paginator [length]="totalElements()" [pageSize]="pageSize"
+               [pageSizeOptions]="[10, 25, 50]" (page)="onPage($event)"
+               showFirstLastButtons />

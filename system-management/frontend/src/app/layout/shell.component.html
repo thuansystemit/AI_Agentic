@@ -1,0 +1,84 @@
+<mat-sidenav-container class="shell-container" [class.nav-collapsed]="!open()">
+  <mat-sidenav mode="side" opened class="sidenav" [class.sidenav-collapsed]="!open()">
+
+    <div class="brand" [class.brand-collapsed]="!open()">
+      <mat-icon class="brand-icon">admin_panel_settings</mat-icon>
+      @if (open()) {
+        <span class="brand-name">System Mgmt</span>
+      }
+    </div>
+
+    <mat-nav-list class="nav-list">
+      <a mat-list-item routerLink="/categories" routerLinkActive="nav-active"
+         [matTooltip]="open() ? '' : 'Categories'" matTooltipPosition="right">
+        <mat-icon matListItemIcon>folder_open</mat-icon>
+        @if (open()) { <span matListItemTitle>Categories</span> }
+      </a>
+
+      @if (auth.isAdmin()) {
+        <a mat-list-item routerLink="/users" routerLinkActive="nav-active"
+           [matTooltip]="open() ? '' : 'Users'" matTooltipPosition="right">
+          <mat-icon matListItemIcon>people</mat-icon>
+          @if (open()) { <span matListItemTitle>Users</span> }
+        </a>
+
+        <a mat-list-item routerLink="/groups" routerLinkActive="nav-active"
+           [matTooltip]="open() ? '' : 'Groups'" matTooltipPosition="right">
+          <mat-icon matListItemIcon>groups</mat-icon>
+          @if (open()) { <span matListItemTitle>Groups</span> }
+        </a>
+      }
+    </mat-nav-list>
+
+    @if (open()) {
+      <div class="sidenav-footer">
+        <span class="version-label">v1.0.0</span>
+      </div>
+    }
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar color="primary" class="toolbar">
+      <button mat-icon-button (click)="toggle()"
+              [attr.aria-label]="open() ? 'Collapse sidebar' : 'Expand sidebar'">
+        <mat-icon>{{ open() ? 'menu_open' : 'menu' }}</mat-icon>
+      </button>
+
+      <span class="toolbar-title">System Management</span>
+      <span class="flex-spacer"></span>
+
+      <div class="user-chip" [matMenuTriggerFor]="userMenu"
+           [matTooltip]="auth.currentUser()?.email || ''" role="button">
+        <div class="avatar">{{ userInitial() }}</div>
+        <span class="user-display-name">{{ auth.currentUser()?.fullName || auth.currentUser()?.email }}</span>
+        <mat-icon class="chevron">expand_more</mat-icon>
+      </div>
+
+      <mat-menu #userMenu="matMenu" xPosition="before">
+        <div class="menu-user-info" (click)="$event.stopPropagation()">
+          <div class="menu-avatar">{{ userInitial() }}</div>
+          <div>
+            <div class="menu-name">{{ auth.currentUser()?.fullName }}</div>
+            <div class="menu-email">{{ auth.currentUser()?.email }}</div>
+            @if (auth.currentUser()?.globalRole) {
+              <span class="menu-role-badge"
+                    [class.menu-role-admin]="auth.currentUser()?.globalRole === 'ADMIN'"
+                    [class.menu-role-editor]="auth.currentUser()?.globalRole === 'EDITOR'"
+                    [class.menu-role-viewer]="auth.currentUser()?.globalRole === 'VIEWER'">
+                {{ auth.currentUser()?.globalRole }}
+              </span>
+            }
+          </div>
+        </div>
+        <button mat-menu-item (click)="auth.logout()">
+          <mat-icon>logout</mat-icon>
+          Sign out
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <div class="page-content">
+      <router-outlet />
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

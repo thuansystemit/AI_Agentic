@@ -1,0 +1,73 @@
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  mat-icon {
+    color: #1a237e;
+  }
+}
+
+.category-desc {
+  color: #777;
+  font-size: 14px;
+  margin: -12px 0 16px;
+}
+
+.docs-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-row:hover {
+  background: #f5f7ff;
+}
+
+.doc-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.doc-icon {
+  color: #5c6bc0;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.doc-title {
+  font-weight: 500;
+  font-size: 14px;
+  color: #1a1a2e;
+}
+
+.doc-preview {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.date-cell {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.actions-col {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.action-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.hidden td {
+  padding: 0;
+  border: none;
+}
