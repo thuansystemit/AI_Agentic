@@ -5,6 +5,7 @@ export interface CategoryResponse {
   name: string;
   description: string;
   createdAt: string;
+  effectivePermission: Permission | null;
 }
 
 export interface CreateCategoryRequest {
@@ -18,5 +19,11 @@ export interface UpdateCategoryRequest {
 }
 
 export interface SetPermissionRequest {
+  permission: Permission;
+}
+
+export interface PermissionEntryResponse {
+  subjectId: string;
+  subjectName: string;
   permission: Permission;
 }

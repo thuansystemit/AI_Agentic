@@ -24,9 +24,11 @@ After every feature implementation or code change, **always run a build and veri
 
 ```bash
 # Maven
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home
 export MAVEN_HOME=/opt/tools/maven/bin
 export PATH=$MAVEN_HOME:$PATH
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home
+export PATH=$JAVA_HOME:$PATH
+Home
 mvn compile -q
 
 # If tests exist and must pass

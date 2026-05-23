@@ -3,9 +3,13 @@ package com.darkness.system.management.service;
 import com.darkness.system.management.config.JwtConfig;
 import com.darkness.system.management.domain.RefreshToken;
 import com.darkness.system.management.domain.User;
+import com.darkness.system.management.dto.request.ChangePasswordRequest;
 import com.darkness.system.management.dto.request.LoginRequest;
+import com.darkness.system.management.dto.request.UpdateProfileRequest;
 import com.darkness.system.management.dto.response.AuthResponse;
 import com.darkness.system.management.dto.response.LoginResult;
+import com.darkness.system.management.dto.response.ProfileResponse;
+import com.darkness.system.management.exception.AccessDeniedException;
 import com.darkness.system.management.exception.AccountLockedException;
 import com.darkness.system.management.exception.InvalidTokenException;
 import com.darkness.system.management.exception.ResourceNotFoundException;
@@ -169,6 +173,44 @@ public class AuthService {
     public void logoutAll(UUID userId) {
         refreshTokenRepository.revokeAllByUserId(userId);
         log.info("Logout-all: all refresh tokens revoked userId={}", userId);
+    }
+
+    public ProfileResponse getProfile(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return toProfileResponse(user);
+    }
+
+    @Transactional
+    public ProfileResponse updateProfile(UUID userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (request.fullName() != null && !request.fullName().isBlank()) {
+            user.setFullName(request.fullName().trim());
+        }
+        if (request.bio() != null) {
+            user.setBio(request.bio().isBlank() ? null : request.bio().trim());
+        }
+        userRepository.save(user);
+        log.info("Profile updated userId={}", userId);
+        return toProfileResponse(user);
+    }
+
+    @Transactional
+    public void changePassword(UUID userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new AccessDeniedException("Current password is incorrect");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+        log.info("Password changed userId={}", userId);
+    }
+
+    private ProfileResponse toProfileResponse(User user) {
+        return new ProfileResponse(user.getId(), user.getEmail(), user.getFullName(),
+                user.getBio(), user.getGlobalRole());
     }
 
     private RefreshToken buildRefreshToken(String rawToken, UUID userId, UUID familyId) {

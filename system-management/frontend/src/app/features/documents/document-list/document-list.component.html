@@ -25,9 +25,10 @@
 <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
   <mat-label>Search documents</mat-label>
   <mat-icon matPrefix>search</mat-icon>
-  <input matInput [formControl]="searchCtrl" placeholder="Document title…" />
-  @if (searchCtrl.value) {
-    <button matSuffix mat-icon-button (click)="searchCtrl.setValue('')" aria-label="Clear search">
+  <input matInput [value]="search()" (input)="search.set($any($event.target).value)"
+         placeholder="Document title…" />
+  @if (search()) {
+    <button matSuffix mat-icon-button (click)="search.set('')" aria-label="Clear search">
       <mat-icon>close</mat-icon>
     </button>
   }
@@ -79,8 +80,10 @@
         <div class="empty-state">
           <mat-icon class="empty-icon">article</mat-icon>
           <h3>No documents yet</h3>
-          <p>{{ searchCtrl.value ? 'No results for "' + searchCtrl.value + '". Try a different search.' : 'Add the first document to this category.' }}</p>
-          @if (!searchCtrl.value) {
+          @if (search()) {
+            <p>No results for "{{ search() }}". Try a different search.</p>
+          } @else {
+            <p>Add the first document to this category.</p>
             <button mat-raised-button color="primary" (click)="openCreate()">
               <mat-icon>note_add</mat-icon> Add first document
             </button>
@@ -95,6 +98,6 @@
   <tr mat-footer-row *matFooterRowDef="['noData']" [class.hidden]="documents().length > 0"></tr>
 </table>
 
-<mat-paginator [length]="totalElements()" [pageSize]="pageSize"
+<mat-paginator [length]="totalElements()" [pageSize]="pageSize()"
                [pageSizeOptions]="[10, 25, 50]" (page)="onPage($event)"
                showFirstLastButtons />

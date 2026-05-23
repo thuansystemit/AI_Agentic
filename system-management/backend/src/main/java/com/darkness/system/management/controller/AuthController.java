@@ -1,8 +1,11 @@
 package com.darkness.system.management.controller;
 
+import com.darkness.system.management.dto.request.ChangePasswordRequest;
 import com.darkness.system.management.dto.request.LoginRequest;
+import com.darkness.system.management.dto.request.UpdateProfileRequest;
 import com.darkness.system.management.dto.response.AuthResponse;
 import com.darkness.system.management.dto.response.LoginResult;
+import com.darkness.system.management.dto.response.ProfileResponse;
 import com.darkness.system.management.security.UserPrincipal;
 import com.darkness.system.management.service.AuthService;
 import jakarta.servlet.http.Cookie;
@@ -74,9 +77,21 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    ResponseEntity<AuthResponse> me(@AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(new AuthResponse(
-                principal.userId(), principal.email(), null, null, null));
+    ResponseEntity<ProfileResponse> me(@AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(authService.getProfile(principal.userId()));
+    }
+
+    @PatchMapping("/me")
+    ResponseEntity<ProfileResponse> updateProfile(@AuthenticationPrincipal UserPrincipal principal,
+                                                  @Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(authService.updateProfile(principal.userId(), request));
+    }
+
+    @PostMapping("/me/password")
+    ResponseEntity<Void> changePassword(@AuthenticationPrincipal UserPrincipal principal,
+                                        @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(principal.userId(), request);
+        return ResponseEntity.noContent().build();
     }
 
     // ── Cookie helpers ────────────────────────────────────────────────────────

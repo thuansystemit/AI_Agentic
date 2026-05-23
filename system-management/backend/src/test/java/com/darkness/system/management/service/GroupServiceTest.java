@@ -7,6 +7,7 @@ import com.darkness.system.management.dto.response.GroupResponse;
 import com.darkness.system.management.dto.response.PageResponse;
 import com.darkness.system.management.exception.DuplicateNameException;
 import com.darkness.system.management.exception.ResourceNotFoundException;
+import com.darkness.system.management.mapper.GroupMapper;
 import com.darkness.system.management.repository.GroupMemberRepository;
 import com.darkness.system.management.repository.GroupRepository;
 import com.darkness.system.management.repository.UserRepository;
@@ -32,6 +33,7 @@ class GroupServiceTest {
     @Mock GroupRepository groupRepository;
     @Mock GroupMemberRepository groupMemberRepository;
     @Mock UserRepository userRepository;
+    @Mock GroupMapper groupMapper;
 
     @InjectMocks GroupService groupService;
 
@@ -47,6 +49,10 @@ class GroupServiceTest {
         group.setId(groupId);
         group.setName("Developers");
         group.setDescription("Dev team");
+        lenient().when(groupMapper.toResponse(any(Group.class))).thenAnswer(inv -> {
+            Group g = inv.getArgument(0);
+            return new GroupResponse(g.getId(), g.getName(), g.getDescription(), g.getCreatedAt());
+        });
     }
 
     @Test

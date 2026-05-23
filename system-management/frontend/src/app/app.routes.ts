@@ -30,6 +30,10 @@ export const routes: Routes = [
         path: 'groups',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/groups/group-list/group-list.component').then(m => m.GroupListComponent)
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
       }
     ]
   },

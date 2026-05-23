@@ -24,23 +24,29 @@
         <p>Sign in to your account to continue.</p>
       </div>
 
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <form (ngSubmit)="onSubmit()">
         <app-field
           label="Email address"
           type="email"
           prefixIcon="mail_outline"
-          [control]="form.get('email')!"
+          [value]="email.value()"
+          [touched]="email.touched()"
+          [error]="email.error()"
           placeholder="you@example.com"
           autocomplete="email"
-          [errors]="{ required: 'Email address is required.', email: 'Enter a valid email address.' }" />
+          (valueChange)="email.value.set($event)"
+          (blur)="email.touched.set(true)" />
 
         <app-field
           label="Password"
           type="password"
           prefixIcon="lock_outline"
-          [control]="form.get('password')!"
+          [value]="password.value()"
+          [touched]="password.touched()"
+          [error]="password.error()"
           autocomplete="current-password"
-          [errors]="{ required: 'Password is required.' }" />
+          (valueChange)="password.value.set($event)"
+          (blur)="password.touched.set(true)" />
 
         @if (errorMessage()) {
           <div class="error-banner" role="alert" aria-live="assertive">

@@ -15,9 +15,10 @@
 <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
   <mat-label>Search groups</mat-label>
   <mat-icon matPrefix>search</mat-icon>
-  <input matInput [formControl]="searchCtrl" placeholder="Group name…" />
-  @if (searchCtrl.value) {
-    <button matSuffix mat-icon-button (click)="searchCtrl.setValue('')" aria-label="Clear search">
+  <input matInput [value]="search()" (input)="search.set($any($event.target).value)"
+         placeholder="Group name…" />
+  @if (search()) {
+    <button matSuffix mat-icon-button (click)="search.set('')" aria-label="Clear search">
       <mat-icon>close</mat-icon>
     </button>
   }
@@ -68,7 +69,7 @@
         <div class="empty-state">
           <mat-icon class="empty-icon">group_off</mat-icon>
           <h3>No groups found</h3>
-          <p>{{ searchCtrl.value ? 'Try a different search term.' : 'Groups let you assign category permissions to multiple users at once.' }}</p>
+          <p>{{ search() ? 'Try a different search term.' : 'Groups let you assign category permissions to multiple users at once.' }}</p>
         </div>
       }
     </td>
@@ -79,6 +80,6 @@
   <tr mat-footer-row *matFooterRowDef="['noData']" [class.hidden]="groups().length > 0"></tr>
 </table>
 
-<mat-paginator [length]="totalElements()" [pageSize]="pageSize"
+<mat-paginator [length]="totalElements()" [pageSize]="pageSize()"
                [pageSizeOptions]="[10, 25]" (page)="onPage($event)"
                showFirstLastButtons />

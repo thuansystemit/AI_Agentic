@@ -40,6 +40,9 @@ public class User {
     @Column(name = "locked_until")
     private Instant lockedUntil;
 
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 

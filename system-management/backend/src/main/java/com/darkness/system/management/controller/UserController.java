@@ -2,6 +2,7 @@ package com.darkness.system.management.controller;
 
 import com.darkness.system.management.domain.enums.GlobalRole;
 import com.darkness.system.management.dto.request.CreateUserRequest;
+import com.darkness.system.management.dto.request.ResetPasswordRequest;
 import com.darkness.system.management.dto.request.UpdateUserRequest;
 import com.darkness.system.management.dto.response.PageResponse;
 import com.darkness.system.management.dto.response.UserResponse;
@@ -62,6 +63,15 @@ public class UserController {
                                             @AuthenticationPrincipal UserPrincipal principal) {
         requireAdmin(principal);
         return ResponseEntity.ok(userService.updateUser(userId, principal.userId(), request));
+    }
+
+    @PostMapping("/{userId}/reset-password")
+    ResponseEntity<Void> resetPassword(@PathVariable UUID userId,
+                                       @Valid @RequestBody ResetPasswordRequest request,
+                                       @AuthenticationPrincipal UserPrincipal principal) {
+        requireAdmin(principal);
+        userService.resetPassword(userId, principal.userId(), request);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{userId}")

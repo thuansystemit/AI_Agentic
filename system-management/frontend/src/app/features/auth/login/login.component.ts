@@ -1,46 +1,43 @@
-import { Component, inject, signal } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../../core/services/auth.service';
 import { FieldComponent } from '../../../shared/components/field/field.component';
+import {
+  composeValidators, emailFormat, required, textField
+} from '../../../shared/signal-form';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    MatButtonModule, MatProgressSpinnerModule, MatIconModule,
-    FieldComponent
-  ],
+  imports: [FormsModule, MatButtonModule, MatProgressSpinnerModule, MatIconModule, FieldComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  private fb = inject(FormBuilder);
   private authService = inject(AuthService);
-  private router = inject(Router);
+  private router      = inject(Router);
 
-  form = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', Validators.required]
-  });
+  email    = textField('', composeValidators(required('Email address'), emailFormat));
+  password = textField('', required('Password'));
 
-  loading = signal(false);
+  loading      = signal(false);
   errorMessage = signal('');
 
+  formValid = computed(() => !this.email.error() && !this.password.error());
+
   onSubmit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    this.email.touched.set(true);
+    this.password.touched.set(true);
+    if (!this.formValid()) return;
+
     this.loading.set(true);
     this.errorMessage.set('');
 
-    const { email, password } = this.form.value;
-    this.authService.login({ email: email!, password: password! }).subscribe({
+    this.authService.login({ email: this.email.value(), password: this.password.value() }).subscribe({
       next: () => this.router.navigate(['/categories']),
       error: err => {
         this.loading.set(false);

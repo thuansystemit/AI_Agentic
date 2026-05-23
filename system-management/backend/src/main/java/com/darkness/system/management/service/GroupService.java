@@ -8,9 +8,11 @@ import com.darkness.system.management.dto.response.GroupResponse;
 import com.darkness.system.management.dto.response.PageResponse;
 import com.darkness.system.management.exception.DuplicateNameException;
 import com.darkness.system.management.exception.ResourceNotFoundException;
+import com.darkness.system.management.mapper.GroupMapper;
 import com.darkness.system.management.repository.GroupMemberRepository;
 import com.darkness.system.management.repository.GroupRepository;
 import com.darkness.system.management.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,31 +20,25 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class GroupService {
 
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final UserRepository userRepository;
-
-    public GroupService(GroupRepository groupRepository,
-                        GroupMemberRepository groupMemberRepository,
-                        UserRepository userRepository) {
-        this.groupRepository = groupRepository;
-        this.groupMemberRepository = groupMemberRepository;
-        this.userRepository = userRepository;
-    }
+    private final GroupMapper groupMapper;
 
     @Transactional(readOnly = true)
     public PageResponse<GroupResponse> listGroups(String search, Pageable pageable) {
         var page = (search == null || search.isBlank())
-                ? groupRepository.findAll(pageable).map(GroupResponse::from)
-                : groupRepository.findByNameContainingIgnoreCase(search, pageable).map(GroupResponse::from);
+                ? groupRepository.findAll(pageable).map(groupMapper::toResponse)
+                : groupRepository.findByNameContainingIgnoreCase(search, pageable).map(groupMapper::toResponse);
         return PageResponse.from(page);
     }
 
     @Transactional(readOnly = true)
     public GroupResponse getGroup(UUID groupId) {
-        return GroupResponse.from(findOrThrow(groupId));
+        return groupMapper.toResponse(findOrThrow(groupId));
     }
 
     @Transactional
@@ -53,7 +49,7 @@ public class GroupService {
         Group group = new Group();
         group.setName(request.name());
         group.setDescription(request.description());
-        return GroupResponse.from(groupRepository.save(group));
+        return groupMapper.toResponse(groupRepository.save(group));
     }
 
     @Transactional
@@ -67,7 +63,7 @@ public class GroupService {
             group.setName(request.name());
         }
         if (request.description() != null) group.setDescription(request.description());
-        return GroupResponse.from(groupRepository.save(group));
+        return groupMapper.toResponse(groupRepository.save(group));
     }
 
     @Transactional
@@ -85,7 +81,7 @@ public class GroupService {
             throw new ResourceNotFoundException("User not found: " + userId);
         }
         if (groupMemberRepository.existsByIdUserIdAndIdGroupId(userId, groupId)) {
-            return; // idempotent
+            return;
         }
         GroupMember member = new GroupMember();
         GroupMember.GroupMemberId id = new GroupMember.GroupMemberId();

@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -157,5 +157,51 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.refresh("invalid-token"))
                 .isInstanceOf(UnauthorizedException.class)
                 .hasMessageContaining("Invalid or expired refresh token");
+    }
+
+    @Test
+    void refresh_shouldThrowWhenNotRefreshToken() {
+        when(tokenProvider.validateToken("access-token")).thenReturn(true);
+        when(tokenProvider.getTokenType("access-token")).thenReturn("access");
+
+        assertThatThrownBy(() -> authService.refresh("access-token"))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessageContaining("not a refresh token");
+    }
+
+    @Test
+    void refresh_shouldThrowWhenUserNotFound() {
+        when(tokenProvider.validateToken("refresh-token")).thenReturn(true);
+        when(tokenProvider.getTokenType("refresh-token")).thenReturn("refresh");
+        when(tokenProvider.getUserIdFromToken("refresh-token")).thenReturn(99L);
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.refresh("refresh-token"))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessageContaining("User not found");
+    }
+
+    @Test
+    void refresh_validToken_returnsNewTokenPair() {
+        when(tokenProvider.validateToken("refresh-token")).thenReturn(true);
+        when(tokenProvider.getTokenType("refresh-token")).thenReturn("refresh");
+        when(tokenProvider.getUserIdFromToken("refresh-token")).thenReturn(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(tokenProvider.generateAccessToken(any(), anyString())).thenReturn("new-access");
+        when(tokenProvider.generateRefreshToken(any())).thenReturn("new-refresh");
+
+        TokenPair pair = authService.refresh("refresh-token");
+
+        assertThat(pair.accessToken()).isEqualTo("new-access");
+        assertThat(pair.refreshToken()).isEqualTo("new-refresh");
+    }
+
+    @Test
+    void toResponse_mapsUserToAuthResponse() {
+        var response = authService.toResponse(testUser);
+
+        assertThat(response.getUser().getId()).isEqualTo(testUser.getId());
+        assertThat(response.getUser().getEmail()).isEqualTo(testUser.getEmail());
+        assertThat(response.getUser().getUsername()).isEqualTo(testUser.getUsername());
     }
 }

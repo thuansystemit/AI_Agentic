@@ -1,7 +1,8 @@
-import { Component, OnInit, Input, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormControl } from '@angular/forms';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { rxResource, toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { RouterLink } from '@angular/router';
+import { DatePipe, SlicePipe } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,11 +13,9 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { DocumentService } from '../../../core/services/document.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { DocumentResponse } from '../../../core/models/document.model';
-import { CategoryResponse } from '../../../core/models/category.model';
 import { DocumentFormDialogComponent } from '../document-form/document-form-dialog.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
@@ -24,7 +23,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   selector: 'app-document-list',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, RouterLink,
+    RouterLink, DatePipe, SlicePipe,
     MatTableModule, MatPaginatorModule, MatButtonModule, MatIconModule,
     MatInputModule, MatFormFieldModule,
     MatDialogModule, MatSnackBarModule, MatProgressBarModule, MatTooltipModule
@@ -32,69 +31,83 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   templateUrl: './document-list.component.html',
   styleUrl: './document-list.component.scss'
 })
-export class DocumentListComponent implements OnInit {
-  @Input() id!: string;
+export class DocumentListComponent {
+  private documentService = inject(DocumentService);
+  private categoryService = inject(CategoryService);
+  private dialog          = inject(MatDialog);
+  private snackBar        = inject(MatSnackBar);
 
-  displayedColumns = ['title', 'updatedAt', 'actions'];
-  documents = signal<DocumentResponse[]>([]);
-  category = signal<CategoryResponse | null>(null);
-  totalElements = signal(0);
-  pageSize = 10;
-  currentPage = 0;
-  isLoading = signal(false);
-  searchCtrl = new FormControl('');
+  // Route param bound automatically via withComponentInputBinding()
+  id = input.required<string>();
 
-  constructor(
-    private documentService: DocumentService,
-    private categoryService: CategoryService,
-    private dialog: MatDialog,
-    private snackBar: MatSnackBar
-  ) {}
+  readonly displayedColumns = ['title', 'updatedAt', 'actions'];
 
-  ngOnInit(): void {
-    this.categoryService.getCategory(this.id).subscribe(cat => this.category.set(cat));
-    this.loadDocuments();
-    this.searchCtrl.valueChanges.pipe(debounceTime(300), distinctUntilChanged())
-      .subscribe(() => { this.currentPage = 0; this.loadDocuments(); });
-  }
+  search    = signal('');
+  pageIndex = signal(0);
+  pageSize  = signal(10);
 
-  loadDocuments(): void {
-    this.isLoading.set(true);
-    this.documentService.listDocuments(this.id, this.currentPage, this.pageSize, this.searchCtrl.value || undefined)
-      .subscribe({
-        next: page => { this.documents.set(page.content); this.totalElements.set(page.totalElements); this.isLoading.set(false); },
-        error: () => { this.isLoading.set(false); }
-      });
+  private debouncedSearch = signal('');
+
+  categoryData = rxResource({
+    params: () => this.id(),
+    stream: ({ params: id }) => this.categoryService.getCategory(id)
+  });
+  category = computed(() => this.categoryData.value() ?? null);
+
+  data = rxResource({
+    params: () => ({
+      id:       this.id(),
+      search:   this.debouncedSearch(),
+      page:     this.pageIndex(),
+      pageSize: this.pageSize()
+    }),
+    stream: ({ params }) =>
+      this.documentService.listDocuments(params.id, params.page, params.pageSize, params.search || undefined)
+  });
+
+  documents     = computed(() => this.data.value()?.content ?? []);
+  totalElements = computed(() => this.data.value()?.totalElements ?? 0);
+  isLoading     = computed(() => this.data.isLoading());
+
+  constructor() {
+    toObservable(this.search).pipe(
+      debounceTime(300), distinctUntilChanged(), takeUntilDestroyed()
+    ).subscribe(s => {
+      this.pageIndex.set(0);
+      this.debouncedSearch.set(s);
+    });
   }
 
   onPage(event: PageEvent): void {
-    this.currentPage = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadDocuments();
+    this.pageIndex.set(event.pageIndex);
+    this.pageSize.set(event.pageSize);
   }
 
   openCreate(): void {
-    this.dialog.open(DocumentFormDialogComponent, { width: '680px', data: { categoryId: this.id } })
-      .afterClosed().subscribe(result => { if (result) this.loadDocuments(); });
+    this.dialog.open(DocumentFormDialogComponent, { width: '680px', data: { categoryId: this.id() } })
+      .afterClosed().subscribe(result => { if (result) this.data.reload(); });
   }
 
   openEdit(doc: DocumentResponse): void {
     this.dialog.open(DocumentFormDialogComponent, { width: '680px', data: doc })
-      .afterClosed().subscribe(result => { if (result) this.loadDocuments(); });
+      .afterClosed().subscribe(result => { if (result) this.data.reload(); });
   }
 
   deleteDocument(doc: DocumentResponse): void {
     this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
-        title: 'Delete document',
-        message: `"${doc.title}" will be permanently deleted and cannot be recovered.`,
+        title:       'Delete document',
+        message:     `"${doc.title}" will be permanently deleted and cannot be recovered.`,
         confirmText: 'Delete document'
       }
     }).afterClosed().subscribe(confirmed => {
       if (!confirmed) return;
       this.documentService.deleteDocument(doc.id).subscribe({
-        next: () => { this.snackBar.open(`"${doc.title}" deleted`, 'Dismiss', { duration: 3000 }); this.loadDocuments(); },
+        next: () => {
+          this.snackBar.open(`"${doc.title}" deleted`, 'Dismiss', { duration: 3000 });
+          this.data.reload();
+        },
         error: err => {
           const msg = err.status === 403
             ? 'You don\'t have permission to delete this document.'

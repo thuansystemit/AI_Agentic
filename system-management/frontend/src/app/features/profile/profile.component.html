@@ -1,0 +1,143 @@
+<div class="profile-page">
+  <div class="profile-header">
+    <h1 class="page-title">My Profile</h1>
+    <p class="page-subtitle">Manage your personal information and security settings.</p>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-bar"></div>
+  }
+
+  <div class="profile-grid">
+
+    <!-- ── Account info (read-only) ─────────────────────────────────────── -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <div class="card-avatar">{{ (fullName.value() || email())[0]?.toUpperCase() }}</div>
+        <mat-card-title>{{ fullName.value() || email() }}</mat-card-title>
+        <mat-card-subtitle>{{ email() }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="role-row">
+          <mat-icon class="role-icon">verified_user</mat-icon>
+          <span class="role-badge" [class]="'role-' + globalRole().toLowerCase()">
+            {{ globalRole() }}
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- ── Edit profile ─────────────────────────────────────────────────── -->
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="title-icon">person</mat-icon>
+          Personal information
+        </mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form (ngSubmit)="saveProfile()">
+          <app-field
+            label="Full name"
+            prefixIcon="badge"
+            [value]="fullName.value()"
+            [touched]="fullName.touched()"
+            [error]="fullName.error()"
+            (valueChange)="fullName.value.set($event)"
+            (blur)="fullName.touched.set(true)" />
+
+          <app-field
+            label="Email address"
+            type="email"
+            prefixIcon="mail_outline"
+            [value]="email()"
+            [disabled]="true"
+            hint="Email address cannot be changed." />
+
+          <app-field
+            label="Bio"
+            type="textarea"
+            [value]="bio.value()"
+            [touched]="bio.touched()"
+            [error]="bio.error()"
+            placeholder="A short description about yourself…"
+            [rows]="3"
+            (valueChange)="bio.value.set($event)"
+            (blur)="bio.touched.set(true)" />
+
+          <div class="form-actions">
+            <button mat-raised-button color="primary" type="submit"
+                    [disabled]="profileLoading()">
+              @if (profileLoading()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                Save changes
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- ── Change password ──────────────────────────────────────────────── -->
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="title-icon">lock</mat-icon>
+          Change password
+        </mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form (ngSubmit)="savePassword()">
+          <app-field
+            label="Current password"
+            type="password"
+            prefixIcon="lock_outline"
+            [value]="currentPassword.value()"
+            [touched]="currentPassword.touched()"
+            [error]="currentPassword.error()"
+            autocomplete="current-password"
+            (valueChange)="currentPassword.value.set($event)"
+            (blur)="currentPassword.touched.set(true)" />
+
+          <app-field
+            label="New password"
+            type="password"
+            prefixIcon="lock_reset"
+            [value]="newPassword.value()"
+            [touched]="newPassword.touched()"
+            [error]="newPassword.error()"
+            hint="At least 8 characters."
+            autocomplete="new-password"
+            (valueChange)="newPassword.value.set($event)"
+            (blur)="newPassword.touched.set(true)" />
+
+          <app-field
+            label="Confirm new password"
+            type="password"
+            prefixIcon="lock_reset"
+            [value]="confirmPassword.value()"
+            [touched]="confirmPassword.touched()"
+            [error]="confirmError()"
+            autocomplete="new-password"
+            (valueChange)="confirmPassword.value.set($event)"
+            (blur)="confirmPassword.touched.set(true)" />
+
+          <div class="form-actions">
+            <button mat-raised-button color="primary" type="submit"
+                    [disabled]="passwordLoading()">
+              @if (passwordLoading()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                Update password
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+</div>

@@ -3,54 +3,77 @@ package com.darkness.system.management.service;
 import com.darkness.system.management.domain.Category;
 import com.darkness.system.management.domain.CategoryGroupPermission;
 import com.darkness.system.management.domain.CategoryUserPermission;
+import com.darkness.system.management.domain.enums.GlobalRole;
 import com.darkness.system.management.domain.enums.Permission;
 import com.darkness.system.management.dto.request.CreateCategoryRequest;
 import com.darkness.system.management.dto.request.SetPermissionRequest;
 import com.darkness.system.management.dto.request.UpdateCategoryRequest;
 import com.darkness.system.management.dto.response.CategoryResponse;
 import com.darkness.system.management.dto.response.PageResponse;
+import com.darkness.system.management.dto.response.PermissionEntryResponse;
+import com.darkness.system.management.exception.AccessDeniedException;
 import com.darkness.system.management.exception.DuplicateNameException;
 import com.darkness.system.management.exception.ResourceNotFoundException;
-import com.darkness.system.management.repository.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.darkness.system.management.mapper.CategoryMapper;
+import com.darkness.system.management.repository.CategoryGroupPermissionRepository;
+import com.darkness.system.management.repository.CategoryRepository;
+import com.darkness.system.management.repository.CategoryUserPermissionRepository;
+import com.darkness.system.management.repository.GroupRepository;
+import com.darkness.system.management.repository.GroupMemberRepository;
+import com.darkness.system.management.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class CategoryService {
-
-    private static final Logger log = LoggerFactory.getLogger(CategoryService.class);
 
     private final CategoryRepository categoryRepository;
     private final CategoryUserPermissionRepository categoryUserPermissionRepository;
     private final CategoryGroupPermissionRepository categoryGroupPermissionRepository;
     private final UserRepository userRepository;
     private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
+    private final CategoryMapper categoryMapper;
+    private final PermissionService permissionService;
 
-    public CategoryService(CategoryRepository categoryRepository,
-                           CategoryUserPermissionRepository categoryUserPermissionRepository,
-                           CategoryGroupPermissionRepository categoryGroupPermissionRepository,
-                           UserRepository userRepository,
-                           GroupRepository groupRepository) {
-        this.categoryRepository = categoryRepository;
-        this.categoryUserPermissionRepository = categoryUserPermissionRepository;
-        this.categoryGroupPermissionRepository = categoryGroupPermissionRepository;
-        this.userRepository = userRepository;
-        this.groupRepository = groupRepository;
+    @Transactional(readOnly = true)
+    public PageResponse<CategoryResponse> listCategories(UUID callerId, Pageable pageable) {
+        GlobalRole role = userRepository.findRoleById(callerId);
+
+        Page<Category> page;
+        if (role == GlobalRole.ADMIN || role == GlobalRole.EDITOR) {
+            // ADMIN and EDITOR see all categories
+            page = categoryRepository.findAll(pageable);
+        } else {
+            // VIEWER sees only categories with explicit group or direct permission
+            List<UUID> groupIds = groupMemberRepository.findGroupIdsByUserId(callerId);
+            page = categoryRepository.findAccessibleByViewer(callerId, groupIds, pageable);
+        }
+
+        // Resolve effective permissions in batch for the current page
+        List<UUID> categoryIds = page.stream().map(Category::getId).toList();
+        Map<UUID, Permission> permMap = permissionService.resolveBatch(callerId, categoryIds);
+
+        return PageResponse.from(page.map(cat ->
+                categoryMapper.toResponse(cat, permMap.getOrDefault(cat.getId(), Permission.READ))));
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<CategoryResponse> listCategories(Pageable pageable) {
-        return PageResponse.from(categoryRepository.findAll(pageable).map(CategoryResponse::from));
-    }
-
-    @Transactional(readOnly = true)
-    public CategoryResponse getCategory(UUID categoryId) {
-        return CategoryResponse.from(findOrThrow(categoryId));
+    public CategoryResponse getCategory(UUID categoryId, UUID callerId) {
+        Category category = findOrThrow(categoryId);
+        Permission effective = permissionService.resolve(callerId, categoryId)
+                .orElseThrow(() -> new AccessDeniedException("Access denied to category: " + categoryId));
+        return categoryMapper.toResponse(category, effective);
     }
 
     @Transactional
@@ -62,13 +85,13 @@ public class CategoryService {
         Category category = new Category();
         category.setName(request.name());
         category.setDescription(request.description());
-        CategoryResponse saved = CategoryResponse.from(categoryRepository.save(category));
-        log.info("createCategory: created categoryId={} name='{}'", saved.id(), saved.name());
-        return saved;
+        Category saved = categoryRepository.save(category);
+        log.info("createCategory: created categoryId={} name='{}'", saved.getId(), saved.getName());
+        return categoryMapper.toResponse(saved, Permission.EDIT);
     }
 
     @Transactional
-    public CategoryResponse updateCategory(UUID categoryId, UpdateCategoryRequest request) {
+    public CategoryResponse updateCategory(UUID categoryId, UpdateCategoryRequest request, UUID callerId) {
         Category category = findOrThrow(categoryId);
         if (request.name() != null) {
             if (!request.name().equalsIgnoreCase(category.getName())
@@ -79,9 +102,9 @@ public class CategoryService {
             category.setName(request.name());
         }
         if (request.description() != null) category.setDescription(request.description());
-        CategoryResponse saved = CategoryResponse.from(categoryRepository.save(category));
+        Category saved = categoryRepository.save(category);
         log.info("updateCategory: updated categoryId={}", categoryId);
-        return saved;
+        return categoryMapper.toResponse(saved, Permission.EDIT);
     }
 
     @Transactional
@@ -93,9 +116,44 @@ public class CategoryService {
         log.info("deleteCategory: deleted categoryId={}", categoryId);
     }
 
-    @Transactional
-    public void setUserPermission(UUID categoryId, UUID userId, SetPermissionRequest request) {
+    // ── Permission management ────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<PermissionEntryResponse> listUserPermissions(UUID categoryId, UUID callerId) {
         findOrThrow(categoryId);
+        requireEdit(callerId, categoryId);
+        List<CategoryUserPermission> entries = categoryUserPermissionRepository.findAllByCategoryId(categoryId);
+        List<UUID> userIds = entries.stream().map(e -> e.getId().getUserId()).toList();
+        Map<UUID, String> nameMap = userRepository.findAllById(userIds).stream()
+                .collect(java.util.stream.Collectors.toMap(u -> u.getId(), u -> u.getFullName()));
+        return entries.stream()
+                .map(e -> new PermissionEntryResponse(
+                        e.getId().getUserId(),
+                        nameMap.getOrDefault(e.getId().getUserId(), "Unknown"),
+                        e.getPermission()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PermissionEntryResponse> listGroupPermissions(UUID categoryId, UUID callerId) {
+        findOrThrow(categoryId);
+        requireEdit(callerId, categoryId);
+        List<CategoryGroupPermission> entries = categoryGroupPermissionRepository.findAllByCategoryId(categoryId);
+        List<UUID> groupIds = entries.stream().map(e -> e.getId().getGroupId()).toList();
+        Map<UUID, String> nameMap = groupRepository.findAllById(groupIds).stream()
+                .collect(java.util.stream.Collectors.toMap(g -> g.getId(), g -> g.getName()));
+        return entries.stream()
+                .map(e -> new PermissionEntryResponse(
+                        e.getId().getGroupId(),
+                        nameMap.getOrDefault(e.getId().getGroupId(), "Unknown"),
+                        e.getPermission()))
+                .toList();
+    }
+
+    @Transactional
+    public void setUserPermission(UUID categoryId, UUID userId, SetPermissionRequest request, UUID callerId) {
+        findOrThrow(categoryId);
+        requireEdit(callerId, categoryId);
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found: " + userId);
         }
@@ -107,16 +165,20 @@ public class CategoryService {
         perm.setId(id);
         perm.setPermission(request.permission());
         categoryUserPermissionRepository.save(perm);
+        log.info("setUserPermission: categoryId={} userId={} permission={}", categoryId, userId, request.permission());
     }
 
     @Transactional
-    public void removeUserPermission(UUID categoryId, UUID userId) {
+    public void removeUserPermission(UUID categoryId, UUID userId, UUID callerId) {
+        requireEdit(callerId, categoryId);
         categoryUserPermissionRepository.deleteByIdCategoryIdAndIdUserId(categoryId, userId);
+        log.info("removeUserPermission: categoryId={} userId={}", categoryId, userId);
     }
 
     @Transactional
-    public void setGroupPermission(UUID categoryId, UUID groupId, SetPermissionRequest request) {
+    public void setGroupPermission(UUID categoryId, UUID groupId, SetPermissionRequest request, UUID callerId) {
         findOrThrow(categoryId);
+        requireEdit(callerId, categoryId);
         if (!groupRepository.existsById(groupId)) {
             throw new ResourceNotFoundException("Group not found: " + groupId);
         }
@@ -128,11 +190,22 @@ public class CategoryService {
         perm.setId(id);
         perm.setPermission(request.permission());
         categoryGroupPermissionRepository.save(perm);
+        log.info("setGroupPermission: categoryId={} groupId={} permission={}", categoryId, groupId, request.permission());
     }
 
     @Transactional
-    public void removeGroupPermission(UUID categoryId, UUID groupId) {
+    public void removeGroupPermission(UUID categoryId, UUID groupId, UUID callerId) {
+        requireEdit(callerId, categoryId);
         categoryGroupPermissionRepository.deleteByIdCategoryIdAndIdGroupId(categoryId, groupId);
+        log.info("removeGroupPermission: categoryId={} groupId={}", categoryId, groupId);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private void requireEdit(UUID callerId, UUID categoryId) {
+        if (!permissionService.hasPermission(callerId, categoryId, Permission.EDIT)) {
+            throw new AccessDeniedException("EDIT permission required on category: " + categoryId);
+        }
     }
 
     private Category findOrThrow(UUID categoryId) {

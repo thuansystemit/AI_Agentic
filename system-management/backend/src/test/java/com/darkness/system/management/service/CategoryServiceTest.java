@@ -1,14 +1,17 @@
 package com.darkness.system.management.service;
 
 import com.darkness.system.management.domain.Category;
+import com.darkness.system.management.domain.enums.GlobalRole;
 import com.darkness.system.management.domain.enums.Permission;
 import com.darkness.system.management.dto.request.CreateCategoryRequest;
 import com.darkness.system.management.dto.request.SetPermissionRequest;
 import com.darkness.system.management.dto.request.UpdateCategoryRequest;
 import com.darkness.system.management.dto.response.CategoryResponse;
 import com.darkness.system.management.dto.response.PageResponse;
+import com.darkness.system.management.exception.AccessDeniedException;
 import com.darkness.system.management.exception.DuplicateNameException;
 import com.darkness.system.management.exception.ResourceNotFoundException;
+import com.darkness.system.management.mapper.CategoryMapper;
 import com.darkness.system.management.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,6 +38,9 @@ class CategoryServiceTest {
     @Mock CategoryGroupPermissionRepository categoryGroupPermissionRepository;
     @Mock UserRepository userRepository;
     @Mock GroupRepository groupRepository;
+    @Mock GroupMemberRepository groupMemberRepository;
+    @Mock CategoryMapper categoryMapper;
+    @Mock PermissionService permissionService;
 
     @InjectMocks CategoryService categoryService;
 
@@ -51,24 +58,46 @@ class CategoryServiceTest {
         category.setId(categoryId);
         category.setName("Engineering");
         category.setDescription("Engineering docs");
+        lenient().when(categoryMapper.toResponse(any(Category.class), any(Permission.class))).thenAnswer(inv -> {
+            Category c = inv.getArgument(0);
+            Permission p = inv.getArgument(1);
+            return new CategoryResponse(c.getId(), c.getName(), c.getDescription(), c.getCreatedAt(), p);
+        });
     }
 
     @Test
     void listCategories_returnsPaginatedCategories() {
         Page<Category> page = new PageImpl<>(List.of(category));
+        when(userRepository.findRoleById(userId)).thenReturn(GlobalRole.ADMIN);
         when(categoryRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(permissionService.resolveBatch(eq(userId), anyList())).thenReturn(Map.of(categoryId, Permission.EDIT));
 
-        PageResponse<CategoryResponse> result = categoryService.listCategories(PageRequest.of(0, 10));
+        PageResponse<CategoryResponse> result = categoryService.listCategories(userId, PageRequest.of(0, 10));
 
         assertThat(result.content()).hasSize(1);
         assertThat(result.content().get(0).name()).isEqualTo("Engineering");
     }
 
     @Test
+    void listCategories_viewer_usesAccessibleQuery() {
+        Page<Category> page = new PageImpl<>(List.of(category));
+        when(userRepository.findRoleById(userId)).thenReturn(GlobalRole.VIEWER);
+        when(groupMemberRepository.findGroupIdsByUserId(userId)).thenReturn(List.of());
+        when(categoryRepository.findAccessibleByViewer(eq(userId), anyList(), any(Pageable.class))).thenReturn(page);
+        when(permissionService.resolveBatch(eq(userId), anyList())).thenReturn(Map.of(categoryId, Permission.READ));
+
+        PageResponse<CategoryResponse> result = categoryService.listCategories(userId, PageRequest.of(0, 10));
+
+        assertThat(result.content()).hasSize(1);
+        verify(categoryRepository).findAccessibleByViewer(eq(userId), anyList(), any(Pageable.class));
+    }
+
+    @Test
     void getCategory_found_returnsCategoryResponse() {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(permissionService.resolve(userId, categoryId)).thenReturn(Optional.of(Permission.READ));
 
-        CategoryResponse result = categoryService.getCategory(categoryId);
+        CategoryResponse result = categoryService.getCategory(categoryId, userId);
 
         assertThat(result.id()).isEqualTo(categoryId);
     }
@@ -77,8 +106,17 @@ class CategoryServiceTest {
     void getCategory_notFound_throws() {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> categoryService.getCategory(categoryId))
+        assertThatThrownBy(() -> categoryService.getCategory(categoryId, userId))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void getCategory_noPermission_throws() {
+        when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(permissionService.resolve(userId, categoryId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> categoryService.getCategory(categoryId, userId))
+                .isInstanceOf(AccessDeniedException.class);
     }
 
     @Test
@@ -112,7 +150,7 @@ class CategoryServiceTest {
         when(categoryRepository.existsByNameIgnoreCase("Platform")).thenReturn(false);
         when(categoryRepository.save(any(Category.class))).thenReturn(category);
 
-        categoryService.updateCategory(categoryId, req);
+        categoryService.updateCategory(categoryId, req, userId);
 
         assertThat(category.getName()).isEqualTo("Platform");
     }
@@ -123,7 +161,7 @@ class CategoryServiceTest {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
         when(categoryRepository.save(any(Category.class))).thenReturn(category);
 
-        categoryService.updateCategory(categoryId, req);
+        categoryService.updateCategory(categoryId, req, userId);
 
         verify(categoryRepository, never()).existsByNameIgnoreCase(any());
     }
@@ -134,7 +172,7 @@ class CategoryServiceTest {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
         when(categoryRepository.existsByNameIgnoreCase("Conflict")).thenReturn(true);
 
-        assertThatThrownBy(() -> categoryService.updateCategory(categoryId, req))
+        assertThatThrownBy(() -> categoryService.updateCategory(categoryId, req, userId))
                 .isInstanceOf(DuplicateNameException.class);
     }
 
@@ -144,7 +182,7 @@ class CategoryServiceTest {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
         when(categoryRepository.save(any(Category.class))).thenReturn(category);
 
-        categoryService.updateCategory(categoryId, req);
+        categoryService.updateCategory(categoryId, req, userId);
 
         assertThat(category.getName()).isEqualTo("Engineering");
         assertThat(category.getDescription()).isEqualTo("New description");
@@ -172,26 +210,28 @@ class CategoryServiceTest {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> categoryService.setUserPermission(
-                categoryId, userId, new SetPermissionRequest(Permission.READ)))
+                categoryId, userId, new SetPermissionRequest(Permission.READ), userId))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void setUserPermission_userNotFound_throws() {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(permissionService.hasPermission(userId, categoryId, Permission.EDIT)).thenReturn(true);
         when(userRepository.existsById(userId)).thenReturn(false);
 
         assertThatThrownBy(() -> categoryService.setUserPermission(
-                categoryId, userId, new SetPermissionRequest(Permission.READ)))
+                categoryId, userId, new SetPermissionRequest(Permission.READ), userId))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void setUserPermission_success_deletesAndSavesNew() {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(permissionService.hasPermission(userId, categoryId, Permission.EDIT)).thenReturn(true);
         when(userRepository.existsById(userId)).thenReturn(true);
 
-        categoryService.setUserPermission(categoryId, userId, new SetPermissionRequest(Permission.WRITE));
+        categoryService.setUserPermission(categoryId, userId, new SetPermissionRequest(Permission.WRITE), userId);
 
         verify(categoryUserPermissionRepository).deleteByIdCategoryIdAndIdUserId(categoryId, userId);
         verify(categoryUserPermissionRepository).save(any());
@@ -199,7 +239,9 @@ class CategoryServiceTest {
 
     @Test
     void removeUserPermission_callsDelete() {
-        categoryService.removeUserPermission(categoryId, userId);
+        when(permissionService.hasPermission(userId, categoryId, Permission.EDIT)).thenReturn(true);
+
+        categoryService.removeUserPermission(categoryId, userId, userId);
 
         verify(categoryUserPermissionRepository).deleteByIdCategoryIdAndIdUserId(categoryId, userId);
     }
@@ -209,26 +251,28 @@ class CategoryServiceTest {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> categoryService.setGroupPermission(
-                categoryId, groupId, new SetPermissionRequest(Permission.READ)))
+                categoryId, groupId, new SetPermissionRequest(Permission.READ), userId))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void setGroupPermission_groupNotFound_throws() {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(permissionService.hasPermission(userId, categoryId, Permission.EDIT)).thenReturn(true);
         when(groupRepository.existsById(groupId)).thenReturn(false);
 
         assertThatThrownBy(() -> categoryService.setGroupPermission(
-                categoryId, groupId, new SetPermissionRequest(Permission.READ)))
+                categoryId, groupId, new SetPermissionRequest(Permission.READ), userId))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void setGroupPermission_success_deletesAndSavesNew() {
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(permissionService.hasPermission(userId, categoryId, Permission.EDIT)).thenReturn(true);
         when(groupRepository.existsById(groupId)).thenReturn(true);
 
-        categoryService.setGroupPermission(categoryId, groupId, new SetPermissionRequest(Permission.EDIT));
+        categoryService.setGroupPermission(categoryId, groupId, new SetPermissionRequest(Permission.EDIT), userId);
 
         verify(categoryGroupPermissionRepository).deleteByIdCategoryIdAndIdGroupId(categoryId, groupId);
         verify(categoryGroupPermissionRepository).save(any());
@@ -236,7 +280,9 @@ class CategoryServiceTest {
 
     @Test
     void removeGroupPermission_callsDelete() {
-        categoryService.removeGroupPermission(categoryId, groupId);
+        when(permissionService.hasPermission(userId, categoryId, Permission.EDIT)).thenReturn(true);
+
+        categoryService.removeGroupPermission(categoryId, groupId, userId);
 
         verify(categoryGroupPermissionRepository).deleteByIdCategoryIdAndIdGroupId(categoryId, groupId);
     }

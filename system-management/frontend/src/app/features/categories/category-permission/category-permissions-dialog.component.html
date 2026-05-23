@@ -1,7 +1,11 @@
 <h2 mat-dialog-title>Permissions — {{ data.name }}</h2>
 
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
 <mat-dialog-content>
-  <mat-tab-group (selectedIndexChange)="selectedTab = $event">
+  <mat-tab-group (selectedIndexChange)="selectedTab.set($event)">
 
     <!-- Users tab -->
     <mat-tab label="Users">
@@ -28,19 +32,19 @@
           <div class="col-auto perm-col">
             <label class="field-label">Permission</label>
             <button type="button" class="perm-trigger" [matMenuTriggerFor]="userPermMenu">
-              <span class="perm-chip perm-{{ newUserPermCtrl.value?.toLowerCase() }}">
-                {{ newUserPermCtrl.value }}
+              <span class="perm-chip perm-{{ newUserPerm().toLowerCase() }}">
+                {{ newUserPerm() }}
               </span>
               <mat-icon class="trigger-caret">expand_more</mat-icon>
             </button>
             <mat-menu #userPermMenu="matMenu" class="perm-menu">
-              <button mat-menu-item (click)="newUserPermCtrl.setValue('READ')">
+              <button mat-menu-item (click)="newUserPerm.set('READ')">
                 <span class="perm-chip perm-read">READ</span>
               </button>
-              <button mat-menu-item (click)="newUserPermCtrl.setValue('WRITE')">
+              <button mat-menu-item (click)="newUserPerm.set('WRITE')">
                 <span class="perm-chip perm-write">WRITE</span>
               </button>
-              <button mat-menu-item (click)="newUserPermCtrl.setValue('EDIT')">
+              <button mat-menu-item (click)="newUserPerm.set('EDIT')">
                 <span class="perm-chip perm-edit">EDIT</span>
               </button>
             </mat-menu>
@@ -117,19 +121,19 @@
           <div class="col-auto perm-col">
             <label class="field-label">Permission</label>
             <button type="button" class="perm-trigger" [matMenuTriggerFor]="groupPermMenu">
-              <span class="perm-chip perm-{{ newGroupPermCtrl.value?.toLowerCase() }}">
-                {{ newGroupPermCtrl.value }}
+              <span class="perm-chip perm-{{ newGroupPerm().toLowerCase() }}">
+                {{ newGroupPerm() }}
               </span>
               <mat-icon class="trigger-caret">expand_more</mat-icon>
             </button>
             <mat-menu #groupPermMenu="matMenu" class="perm-menu">
-              <button mat-menu-item (click)="newGroupPermCtrl.setValue('READ')">
+              <button mat-menu-item (click)="newGroupPerm.set('READ')">
                 <span class="perm-chip perm-read">READ</span>
               </button>
-              <button mat-menu-item (click)="newGroupPermCtrl.setValue('WRITE')">
+              <button mat-menu-item (click)="newGroupPerm.set('WRITE')">
                 <span class="perm-chip perm-write">WRITE</span>
               </button>
-              <button mat-menu-item (click)="newGroupPermCtrl.setValue('EDIT')">
+              <button mat-menu-item (click)="newGroupPerm.set('EDIT')">
                 <span class="perm-chip perm-edit">EDIT</span>
               </button>
             </mat-menu>
@@ -188,7 +192,7 @@
 
 <mat-dialog-actions align="end">
   <button mat-stroked-button mat-dialog-close>Close</button>
-  <button mat-raised-button color="primary" (click)="addPermission()" [disabled]="!canAdd">
+  <button mat-raised-button color="primary" (click)="addPermission()" [disabled]="!canAdd()">
     <mat-icon>add</mat-icon>
     Add permission
   </button>

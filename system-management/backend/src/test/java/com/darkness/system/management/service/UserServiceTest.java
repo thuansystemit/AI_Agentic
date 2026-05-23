@@ -3,12 +3,14 @@ package com.darkness.system.management.service;
 import com.darkness.system.management.domain.User;
 import com.darkness.system.management.domain.enums.GlobalRole;
 import com.darkness.system.management.dto.request.CreateUserRequest;
+import com.darkness.system.management.dto.request.ResetPasswordRequest;
 import com.darkness.system.management.dto.request.UpdateUserRequest;
 import com.darkness.system.management.dto.response.PageResponse;
 import com.darkness.system.management.dto.response.UserResponse;
 import com.darkness.system.management.exception.CannotModifySelfException;
 import com.darkness.system.management.exception.EmailAlreadyExistsException;
 import com.darkness.system.management.exception.ResourceNotFoundException;
+import com.darkness.system.management.mapper.UserMapper;
 import com.darkness.system.management.repository.RefreshTokenRepository;
 import com.darkness.system.management.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +36,7 @@ class UserServiceTest {
     @Mock UserRepository userRepository;
     @Mock RefreshTokenRepository refreshTokenRepository;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock UserMapper userMapper;
 
     @InjectMocks UserService userService;
 
@@ -51,6 +54,11 @@ class UserServiceTest {
         user.setFullName("Test User");
         user.setGlobalRole(GlobalRole.VIEWER);
         user.setActive(true);
+        lenient().when(userMapper.toResponse(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            return new UserResponse(u.getId(), u.getEmail(), u.getFullName(),
+                    u.getGlobalRole(), u.isActive(), u.isLocked(), u.getCreatedAt());
+        });
     }
 
     @Test
@@ -184,6 +192,32 @@ class UserServiceTest {
 
         assertThat(user.isActive()).isTrue();
         verify(refreshTokenRepository, never()).revokeAllByUserId(any());
+    }
+
+    @Test
+    void resetPassword_selfModify_throwsCannotModifySelfException() {
+        assertThatThrownBy(() -> userService.resetPassword(userId, userId, new ResetPasswordRequest("NewPass1!")))
+                .isInstanceOf(CannotModifySelfException.class);
+    }
+
+    @Test
+    void resetPassword_userNotFound_throwsResourceNotFoundException() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.resetPassword(userId, callerId, new ResetPasswordRequest("NewPass1!")))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void resetPassword_success_encodesPasswordAndRevokesTokens() {
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode("NewPass1!")).thenReturn("$2a$hashed_new");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        userService.resetPassword(userId, callerId, new ResetPasswordRequest("NewPass1!"));
+
+        assertThat(user.getPasswordHash()).isEqualTo("$2a$hashed_new");
+        verify(refreshTokenRepository).revokeAllByUserId(userId);
     }
 
     @Test

@@ -1,12 +1,13 @@
-import { Component, Inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatListModule } from '@angular/material/list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { GroupService } from '../../../core/services/group.service';
 import { UserService } from '../../../core/services/user.service';
@@ -25,16 +26,16 @@ import { UserResponse } from '../../../core/models/user.model';
   styleUrl: './group-members-dialog.component.scss'
 })
 export class GroupMembersDialogComponent implements OnInit {
-  members = signal<UserResponse[]>([]);
-  filteredUsers = signal<UserResponse[]>([]);
-  userSearchCtrl = new FormControl('');
+  private groupService = inject(GroupService);
+  private userService  = inject(UserService);
+  private snackBar     = inject(MatSnackBar);
+  readonly data        = inject<GroupResponse>(MAT_DIALOG_DATA);
 
-  constructor(
-    private groupService: GroupService,
-    private userService: UserService,
-    private snackBar: MatSnackBar,
-    @Inject(MAT_DIALOG_DATA) public data: GroupResponse
-  ) {}
+  members       = signal<UserResponse[]>([]);
+  filteredUsers = signal<UserResponse[]>([]);
+
+  // FormControl retained here: valueChanges feeds a debounced switchMap stream
+  userSearchCtrl = new FormControl('');
 
   ngOnInit(): void {
     this.userSearchCtrl.valueChanges.pipe(

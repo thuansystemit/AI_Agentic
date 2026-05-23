@@ -8,8 +8,10 @@ import com.darkness.system.management.dto.response.DocumentResponse;
 import com.darkness.system.management.dto.response.PageResponse;
 import com.darkness.system.management.exception.AccessDeniedException;
 import com.darkness.system.management.exception.ResourceNotFoundException;
+import com.darkness.system.management.mapper.DocumentMapper;
 import com.darkness.system.management.repository.CategoryRepository;
 import com.darkness.system.management.repository.DocumentRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,37 +22,29 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final CategoryRepository categoryRepository;
     private final PermissionService permissionService;
-
-    public DocumentService(DocumentRepository documentRepository,
-                           CategoryRepository categoryRepository,
-                           PermissionService permissionService) {
-        this.documentRepository = documentRepository;
-        this.categoryRepository = categoryRepository;
-        this.permissionService = permissionService;
-    }
+    private final DocumentMapper documentMapper;
 
     @Transactional(readOnly = true)
     public PageResponse<DocumentResponse> listDocuments(UUID categoryId, String search, UUID callerId, Pageable pageable) {
-        // FINDING-001: permission check BEFORE data retrieval
         requirePermission(callerId, categoryId, Permission.READ);
         var page = (search == null || search.isBlank())
-                ? documentRepository.findByCategoryId(categoryId, pageable).map(DocumentResponse::from)
+                ? documentRepository.findByCategoryId(categoryId, pageable).map(documentMapper::toResponse)
                 : documentRepository.findByTitleContainingIgnoreCaseAndCategoryId(search, categoryId, pageable)
-                        .map(DocumentResponse::from);
+                        .map(documentMapper::toResponse);
         return PageResponse.from(page);
     }
 
     @Transactional(readOnly = true)
     public DocumentResponse getDocument(UUID documentId, UUID callerId) {
         Document doc = findOrThrow(documentId);
-        // FINDING-001: check permission BEFORE returning data
         requirePermission(callerId, doc.getCategoryId(), Permission.READ);
-        return DocumentResponse.from(doc);
+        return documentMapper.toResponse(doc);
     }
 
     @Transactional
@@ -59,13 +53,12 @@ public class DocumentService {
             throw new ResourceNotFoundException("Category not found: " + request.categoryId());
         }
         requirePermission(callerId, request.categoryId(), Permission.WRITE);
-
         Document doc = new Document();
         doc.setTitle(request.title());
         doc.setContent(request.content() != null ? request.content() : "");
         doc.setCategoryId(request.categoryId());
         doc.setCreatedBy(callerId);
-        return DocumentResponse.from(documentRepository.save(doc));
+        return documentMapper.toResponse(documentRepository.save(doc));
     }
 
     @Transactional
@@ -74,25 +67,22 @@ public class DocumentService {
             throw new ResourceNotFoundException("Category not found: " + categoryId);
         }
         requirePermission(callerId, categoryId, Permission.WRITE);
-
         String content = new String(file.getBytes(), StandardCharsets.UTF_8);
-
         Document doc = new Document();
         doc.setTitle(title.isBlank() ? stripExtension(file.getOriginalFilename()) : title);
         doc.setContent(content);
         doc.setCategoryId(categoryId);
         doc.setCreatedBy(callerId);
-        return DocumentResponse.from(documentRepository.save(doc));
+        return documentMapper.toResponse(documentRepository.save(doc));
     }
 
     @Transactional
     public DocumentResponse updateDocument(UUID documentId, UpdateDocumentRequest request, UUID callerId) {
         Document doc = findOrThrow(documentId);
         requirePermission(callerId, doc.getCategoryId(), Permission.WRITE);
-
         if (request.title() != null) doc.setTitle(request.title());
         if (request.content() != null) doc.setContent(request.content());
-        return DocumentResponse.from(documentRepository.save(doc));
+        return documentMapper.toResponse(documentRepository.save(doc));
     }
 
     @Transactional

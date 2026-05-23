@@ -8,8 +8,10 @@ import com.darkness.system.management.dto.response.DocumentResponse;
 import com.darkness.system.management.dto.response.PageResponse;
 import com.darkness.system.management.exception.AccessDeniedException;
 import com.darkness.system.management.exception.ResourceNotFoundException;
+import com.darkness.system.management.mapper.DocumentMapper;
 import com.darkness.system.management.repository.CategoryRepository;
 import com.darkness.system.management.repository.DocumentRepository;
+import org.springframework.web.multipart.MultipartFile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +34,7 @@ class DocumentServiceTest {
     @Mock DocumentRepository documentRepository;
     @Mock CategoryRepository categoryRepository;
     @Mock PermissionService permissionService;
+    @Mock DocumentMapper documentMapper;
 
     @InjectMocks DocumentService documentService;
 
@@ -52,6 +55,11 @@ class DocumentServiceTest {
         document.setContent("Hello");
         document.setCategoryId(categoryId);
         document.setCreatedBy(callerId);
+        lenient().when(documentMapper.toResponse(any(Document.class))).thenAnswer(inv -> {
+            Document d = inv.getArgument(0);
+            return new DocumentResponse(d.getId(), d.getTitle(), d.getContent(),
+                    d.getCategoryId(), d.getCreatedBy(), d.getCreatedAt(), d.getUpdatedAt());
+        });
     }
 
     // List documents
@@ -243,5 +251,99 @@ class DocumentServiceTest {
 
         assertThatThrownBy(() -> documentService.deleteDocument(docId, callerId))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    // Upload document
+    @Test
+    void uploadDocument_categoryNotFound_throws() throws Exception {
+        MultipartFile file = mock(MultipartFile.class);
+        when(categoryRepository.existsById(categoryId)).thenReturn(false);
+
+        assertThatThrownBy(() -> documentService.uploadDocument(file, "Title", categoryId, callerId))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void uploadDocument_noPermission_throws() throws Exception {
+        MultipartFile file = mock(MultipartFile.class);
+        when(categoryRepository.existsById(categoryId)).thenReturn(true);
+        when(permissionService.hasPermission(callerId, categoryId, Permission.WRITE)).thenReturn(false);
+
+        assertThatThrownBy(() -> documentService.uploadDocument(file, "Title", categoryId, callerId))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void uploadDocument_success_withExplicitTitle() throws Exception {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getBytes()).thenReturn("file content".getBytes());
+        when(categoryRepository.existsById(categoryId)).thenReturn(true);
+        when(permissionService.hasPermission(callerId, categoryId, Permission.WRITE)).thenReturn(true);
+        when(documentRepository.save(any(Document.class))).thenAnswer(inv -> {
+            Document d = inv.getArgument(0);
+            d.setId(UUID.randomUUID());
+            return d;
+        });
+
+        DocumentResponse result = documentService.uploadDocument(file, "My Title", categoryId, callerId);
+
+        assertThat(result.title()).isEqualTo("My Title");
+        assertThat(result.createdBy()).isEqualTo(callerId);
+    }
+
+    @Test
+    void uploadDocument_blankTitle_stripsExtension() throws Exception {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getBytes()).thenReturn("content".getBytes());
+        when(file.getOriginalFilename()).thenReturn("report.txt");
+        when(categoryRepository.existsById(categoryId)).thenReturn(true);
+        when(permissionService.hasPermission(callerId, categoryId, Permission.WRITE)).thenReturn(true);
+        when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        DocumentResponse result = documentService.uploadDocument(file, "  ", categoryId, callerId);
+
+        assertThat(result.title()).isEqualTo("report");
+    }
+
+    @Test
+    void uploadDocument_blankTitle_nullFilename_usesUntitled() throws Exception {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getBytes()).thenReturn("content".getBytes());
+        when(file.getOriginalFilename()).thenReturn(null);
+        when(categoryRepository.existsById(categoryId)).thenReturn(true);
+        when(permissionService.hasPermission(callerId, categoryId, Permission.WRITE)).thenReturn(true);
+        when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        DocumentResponse result = documentService.uploadDocument(file, "", categoryId, callerId);
+
+        assertThat(result.title()).isEqualTo("Untitled");
+    }
+
+    @Test
+    void uploadDocument_blankTitle_blankFilename_usesUntitled() throws Exception {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getBytes()).thenReturn("content".getBytes());
+        when(file.getOriginalFilename()).thenReturn("  ");
+        when(categoryRepository.existsById(categoryId)).thenReturn(true);
+        when(permissionService.hasPermission(callerId, categoryId, Permission.WRITE)).thenReturn(true);
+        when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        DocumentResponse result = documentService.uploadDocument(file, "", categoryId, callerId);
+
+        assertThat(result.title()).isEqualTo("Untitled");
+    }
+
+    @Test
+    void uploadDocument_blankTitle_noExtension_usesFilename() throws Exception {
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getBytes()).thenReturn("content".getBytes());
+        when(file.getOriginalFilename()).thenReturn("nodot");
+        when(categoryRepository.existsById(categoryId)).thenReturn(true);
+        when(permissionService.hasPermission(callerId, categoryId, Permission.WRITE)).thenReturn(true);
+        when(documentRepository.save(any(Document.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        DocumentResponse result = documentService.uploadDocument(file, "", categoryId, callerId);
+
+        assertThat(result.title()).isEqualTo("nodot");
     }
 }

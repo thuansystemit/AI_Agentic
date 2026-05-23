@@ -1,5 +1,5 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,33 +19,25 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
   selector: 'app-category-list',
   standalone: true,
   imports: [
-    CommonModule,
     MatCardModule, MatButtonModule, MatIconModule,
     MatDialogModule, MatSnackBarModule, MatProgressBarModule, MatTooltipModule
   ],
   templateUrl: './category-list.component.html',
   styleUrl: './category-list.component.scss'
 })
-export class CategoryListComponent implements OnInit {
-  categories = signal<CategoryResponse[]>([]);
-  isLoading = signal(false);
+export class CategoryListComponent {
+  private categoryService = inject(CategoryService);
+  readonly auth           = inject(AuthService);
+  private router          = inject(Router);
+  private dialog          = inject(MatDialog);
+  private snackBar        = inject(MatSnackBar);
 
-  constructor(
-    private categoryService: CategoryService,
-    readonly auth: AuthService,
-    private router: Router,
-    private dialog: MatDialog,
-    private snackBar: MatSnackBar
-  ) {}
+  data       = rxResource({ stream: () => this.categoryService.listCategories() });
+  categories = computed(() => this.data.value()?.content ?? []);
+  isLoading  = computed(() => this.data.isLoading());
 
-  ngOnInit(): void { this.loadCategories(); }
-
-  loadCategories(): void {
-    this.isLoading.set(true);
-    this.categoryService.listCategories().subscribe({
-      next: page => { this.categories.set(page.content); this.isLoading.set(false); },
-      error: () => { this.isLoading.set(false); }
-    });
+  canManagePermissions(cat: CategoryResponse): boolean {
+    return cat.effectivePermission === 'EDIT';
   }
 
   openDocuments(cat: CategoryResponse): void {
@@ -54,12 +46,12 @@ export class CategoryListComponent implements OnInit {
 
   openCreate(): void {
     this.dialog.open(CategoryFormDialogComponent, { width: '440px' })
-      .afterClosed().subscribe(result => { if (result) this.loadCategories(); });
+      .afterClosed().subscribe(result => { if (result) this.data.reload(); });
   }
 
   openEdit(cat: CategoryResponse): void {
     this.dialog.open(CategoryFormDialogComponent, { width: '440px', data: cat })
-      .afterClosed().subscribe(result => { if (result) this.loadCategories(); });
+      .afterClosed().subscribe(result => { if (result) this.data.reload(); });
   }
 
   openPermissions(cat: CategoryResponse): void {
@@ -70,14 +62,14 @@ export class CategoryListComponent implements OnInit {
     this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
-        title: 'Delete category',
-        message: `"${cat.name}" and all its documents will be permanently deleted. This cannot be undone.`,
+        title:       'Delete category',
+        message:     `"${cat.name}" and all its documents will be permanently deleted. This cannot be undone.`,
         confirmText: 'Delete category'
       }
     }).afterClosed().subscribe(confirmed => {
       if (!confirmed) return;
       this.categoryService.deleteCategory(cat.id).subscribe({
-        next: () => { this.snackBar.open('Category deleted', 'Dismiss', { duration: 3000 }); this.loadCategories(); },
+        next:  () => { this.snackBar.open('Category deleted', 'Dismiss', { duration: 3000 }); this.data.reload(); },
         error: () => this.snackBar.open('Failed to delete category. Please try again.', 'Dismiss', { duration: 4000 })
       });
     });

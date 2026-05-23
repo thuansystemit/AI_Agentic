@@ -2,7 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CategoryResponse, CreateCategoryRequest, SetPermissionRequest, UpdateCategoryRequest } from '../models/category.model';
+import {
+  CategoryResponse, CreateCategoryRequest, PermissionEntryResponse,
+  SetPermissionRequest, UpdateCategoryRequest
+} from '../models/category.model';
 import { PageResponse } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
@@ -30,6 +33,14 @@ export class CategoryService {
 
   deleteCategory(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  getUserPermissions(categoryId: string): Observable<PermissionEntryResponse[]> {
+    return this.http.get<PermissionEntryResponse[]>(`${this.apiUrl}/${categoryId}/permissions/users`);
+  }
+
+  getGroupPermissions(categoryId: string): Observable<PermissionEntryResponse[]> {
+    return this.http.get<PermissionEntryResponse[]>(`${this.apiUrl}/${categoryId}/permissions/groups`);
   }
 
   setUserPermission(categoryId: string, userId: string, request: SetPermissionRequest): Observable<void> {

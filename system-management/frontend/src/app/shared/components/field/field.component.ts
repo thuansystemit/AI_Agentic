@@ -1,43 +1,48 @@
-import { Component, Input } from '@angular/core';
-import { AbstractControl, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { NgClass } from '@angular/common';
 
 export type FieldType = 'text' | 'email' | 'password' | 'textarea';
 
 @Component({
   selector: 'app-field',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, NgClass],
+  imports: [MatIconModule],
   templateUrl: './field.component.html',
   styleUrl: './field.component.scss'
 })
 export class FieldComponent {
-  @Input({ required: true }) control!: AbstractControl;
-  @Input() label = '';
-  @Input() type: FieldType = 'text';
-  @Input() placeholder = '';
-  @Input() prefixIcon = '';
-  @Input() hint = '';
-  @Input() rows = 4;
-  @Input() autocomplete = '';
-  @Input() errors: Partial<Record<string, string>> = {};
+  label        = input('');
+  type         = input<FieldType>('text');
+  value        = input('');
+  touched      = input(false);
+  error        = input<string | null>(null);
+  placeholder  = input('');
+  prefixIcon   = input('');
+  hint         = input('');
+  rows         = input(4);
+  autocomplete = input('');
+  disabled     = input(false);
 
-  showPassword = false;
+  valueChange = output<string>();
+  blur        = output<void>();
+
+  showPassword = signal(false);
+
   readonly fieldId = `field-${Math.random().toString(36).slice(2, 8)}`;
 
-  get fc(): FormControl {
-    return this.control as FormControl;
+  readonly hasError = computed(() => !!this.error() && this.touched());
+
+  readonly inputType = computed(() =>
+    this.type() === 'password'
+      ? (this.showPassword() ? 'text' : 'password')
+      : this.type()
+  );
+
+  onInput(event: Event): void {
+    this.valueChange.emit((event.target as HTMLInputElement).value);
   }
 
-  get inputType(): string {
-    return this.type === 'password' ? (this.showPassword ? 'text' : 'password') : this.type;
-  }
-
-  get errorMessage(): string {
-    const ctrl = this.control;
-    if (!ctrl?.errors || !ctrl.touched) return '';
-    const key = Object.keys(ctrl.errors)[0];
-    return this.errors[key] ?? '';
+  onBlur(): void {
+    this.blur.emit();
   }
 }

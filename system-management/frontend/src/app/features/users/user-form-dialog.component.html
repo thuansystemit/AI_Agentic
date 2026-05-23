@@ -1,51 +1,60 @@
 <h2 mat-dialog-title>{{ isEdit ? 'Edit user' : 'Create user' }}</h2>
 
 <mat-dialog-content>
-  <form [formGroup]="form" class="dialog-form">
+  <div class="dialog-form">
     <div class="row g-3">
       @if (!isEdit) {
         <div class="col-md-6">
           <app-field
             label="Email address"
             type="email"
-            [control]="form.get('email')!"
+            [value]="email.value()"
+            [touched]="email.touched()"
+            [error]="email.error()"
             autocomplete="email"
-            [errors]="{ required: 'Email address is required.', email: 'Enter a valid email address.' }" />
+            (valueChange)="email.value.set($event)"
+            (blur)="email.touched.set(true)" />
         </div>
         <div class="col-md-6">
           <app-field
             label="Password"
             type="password"
-            [control]="form.get('password')!"
+            [value]="password.value()"
+            [touched]="password.touched()"
+            [error]="password.error()"
             autocomplete="new-password"
-            [errors]="{ required: 'Password is required.', minlength: 'Minimum 8 characters required.' }" />
+            (valueChange)="password.value.set($event)"
+            (blur)="password.touched.set(true)" />
         </div>
       }
 
       <div class="col-12">
         <app-field
           label="Full name"
-          [control]="form.get('fullName')!"
-          [errors]="{ required: 'Full name is required.' }" />
+          [value]="fullName.value()"
+          [touched]="fullName.touched()"
+          [error]="fullName.error()"
+          (valueChange)="fullName.value.set($event)"
+          (blur)="fullName.touched.set(true)" />
       </div>
 
       <div class="col-12">
         <label class="form-label fw-medium">Role</label>
         <button type="button" class="role-trigger" #roleTriggerBtn
                 [matMenuTriggerFor]="roleMenu" (menuOpened)="onRoleMenuOpened()">
-          <span class="role-chip role-{{ form.get('globalRole')!.value?.toLowerCase() }}">
-            {{ form.get('globalRole')!.value }}
+          <span class="role-chip role-{{ globalRole().toLowerCase() }}">
+            {{ globalRole() }}
           </span>
           <mat-icon class="trigger-caret">expand_more</mat-icon>
         </button>
         <mat-menu #roleMenu="matMenu" class="role-menu">
-          <button mat-menu-item (click)="form.get('globalRole')!.setValue('ADMIN')">
+          <button mat-menu-item (click)="globalRole.set('ADMIN')">
             <span class="role-chip role-admin">ADMIN</span>
           </button>
-          <button mat-menu-item (click)="form.get('globalRole')!.setValue('EDITOR')">
+          <button mat-menu-item (click)="globalRole.set('EDITOR')">
             <span class="role-chip role-editor">EDITOR</span>
           </button>
-          <button mat-menu-item (click)="form.get('globalRole')!.setValue('VIEWER')">
+          <button mat-menu-item (click)="globalRole.set('VIEWER')">
             <span class="role-chip role-viewer">VIEWER</span>
           </button>
         </mat-menu>
@@ -55,13 +64,15 @@
         <div class="col-12">
           <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch"
-                   id="isActiveSwitch" formControlName="isActive" />
+                   id="isActiveSwitch"
+                   [checked]="isActive()"
+                   (change)="isActive.set($any($event.target).checked)" />
             <label class="form-check-label" for="isActiveSwitch">Active account</label>
           </div>
         </div>
       }
     </div>
-  </form>
+  </div>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">

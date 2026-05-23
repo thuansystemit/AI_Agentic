@@ -6,6 +6,8 @@ import com.darkness.system.management.dto.request.SetPermissionRequest;
 import com.darkness.system.management.dto.request.UpdateCategoryRequest;
 import com.darkness.system.management.dto.response.CategoryResponse;
 import com.darkness.system.management.dto.response.PageResponse;
+import com.darkness.system.management.dto.response.PermissionEntryResponse;
+import com.darkness.system.management.exception.AccessDeniedException;
 import com.darkness.system.management.repository.UserRepository;
 import com.darkness.system.management.security.UserPrincipal;
 import com.darkness.system.management.service.CategoryService;
@@ -18,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -35,13 +38,16 @@ public class CategoryController {
     }
 
     @GetMapping
-    ResponseEntity<PageResponse<CategoryResponse>> listCategories(Pageable pageable) {
-        return ResponseEntity.ok(categoryService.listCategories(pageable));
+    ResponseEntity<PageResponse<CategoryResponse>> listCategories(
+            @AuthenticationPrincipal UserPrincipal principal,
+            Pageable pageable) {
+        return ResponseEntity.ok(categoryService.listCategories(principal.userId(), pageable));
     }
 
     @GetMapping("/{categoryId}")
-    ResponseEntity<CategoryResponse> getCategory(@PathVariable UUID categoryId) {
-        return ResponseEntity.ok(categoryService.getCategory(categoryId));
+    ResponseEntity<CategoryResponse> getCategory(@PathVariable UUID categoryId,
+                                                  @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(categoryService.getCategory(categoryId, principal.userId()));
     }
 
     @PostMapping
@@ -56,7 +62,7 @@ public class CategoryController {
                                                      @Valid @RequestBody UpdateCategoryRequest request,
                                                      @AuthenticationPrincipal UserPrincipal principal) {
         requireAdmin(principal);
-        return ResponseEntity.ok(categoryService.updateCategory(categoryId, request));
+        return ResponseEntity.ok(categoryService.updateCategory(categoryId, request, principal.userId()));
     }
 
     @DeleteMapping("/{categoryId}")
@@ -67,13 +73,21 @@ public class CategoryController {
         return ResponseEntity.noContent().build();
     }
 
+    // ── Permission management (requires EDIT on the category) ────────────────
+
+    @GetMapping("/{categoryId}/permissions/users")
+    ResponseEntity<List<PermissionEntryResponse>> listUserPermissions(
+            @PathVariable UUID categoryId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(categoryService.listUserPermissions(categoryId, principal.userId()));
+    }
+
     @PutMapping("/{categoryId}/permissions/users/{userId}")
     ResponseEntity<Void> setUserPermission(@PathVariable UUID categoryId,
                                            @PathVariable UUID userId,
                                            @Valid @RequestBody SetPermissionRequest request,
                                            @AuthenticationPrincipal UserPrincipal principal) {
-        requireAdmin(principal);
-        categoryService.setUserPermission(categoryId, userId, request);
+        categoryService.setUserPermission(categoryId, userId, request, principal.userId());
         return ResponseEntity.noContent().build();
     }
 
@@ -81,9 +95,15 @@ public class CategoryController {
     ResponseEntity<Void> removeUserPermission(@PathVariable UUID categoryId,
                                               @PathVariable UUID userId,
                                               @AuthenticationPrincipal UserPrincipal principal) {
-        requireAdmin(principal);
-        categoryService.removeUserPermission(categoryId, userId);
+        categoryService.removeUserPermission(categoryId, userId, principal.userId());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{categoryId}/permissions/groups")
+    ResponseEntity<List<PermissionEntryResponse>> listGroupPermissions(
+            @PathVariable UUID categoryId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(categoryService.listGroupPermissions(categoryId, principal.userId()));
     }
 
     @PutMapping("/{categoryId}/permissions/groups/{groupId}")
@@ -91,8 +111,7 @@ public class CategoryController {
                                             @PathVariable UUID groupId,
                                             @Valid @RequestBody SetPermissionRequest request,
                                             @AuthenticationPrincipal UserPrincipal principal) {
-        requireAdmin(principal);
-        categoryService.setGroupPermission(categoryId, groupId, request);
+        categoryService.setGroupPermission(categoryId, groupId, request, principal.userId());
         return ResponseEntity.noContent().build();
     }
 
@@ -100,21 +119,17 @@ public class CategoryController {
     ResponseEntity<Void> removeGroupPermission(@PathVariable UUID categoryId,
                                                @PathVariable UUID groupId,
                                                @AuthenticationPrincipal UserPrincipal principal) {
-        requireAdmin(principal);
-        categoryService.removeGroupPermission(categoryId, groupId);
+        categoryService.removeGroupPermission(categoryId, groupId, principal.userId());
         return ResponseEntity.noContent().build();
     }
 
+    // ── Helper ───────────────────────────────────────────────────────────────
+
     private void requireAdmin(UserPrincipal principal) {
         GlobalRole role = userRepository.findRoleById(principal.userId());
-        if (role == null) {
-            log.warn("requireAdmin: no role found for userId={} — user may have been deleted", principal.userId());
-            throw new com.darkness.system.management.exception.AccessDeniedException("Admin access required");
+        if (role == null || role != GlobalRole.ADMIN) {
+            log.warn("requireAdmin: denied userId={} role={}", principal.userId(), role);
+            throw new AccessDeniedException("Admin access required");
         }
-        if (role != GlobalRole.ADMIN) {
-            log.warn("requireAdmin: access denied userId={} email={} role={}", principal.userId(), principal.email(), role);
-            throw new com.darkness.system.management.exception.AccessDeniedException("Admin access required");
-        }
-        log.debug("requireAdmin: granted userId={} email={}", principal.userId(), principal.email());
     }
 }

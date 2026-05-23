@@ -1,24 +1,29 @@
 <h2 mat-dialog-title>{{ data ? 'Edit group' : 'Create group' }}</h2>
 
 <mat-dialog-content>
-  <form [formGroup]="form">
-    <app-field
-      label="Group name"
-      [control]="form.get('name')!"
-      [errors]="{ required: 'Group name is required.', minlength: 'Minimum 2 characters required.' }" />
+  <app-field
+    label="Group name"
+    [value]="name.value()"
+    [touched]="name.touched()"
+    [error]="name.error()"
+    (valueChange)="name.value.set($event)"
+    (blur)="name.touched.set(true)" />
 
-    <app-field
-      label="Description"
-      type="textarea"
-      [control]="form.get('description')!"
-      [rows]="3"
-      placeholder="What is this group used for?" />
-  </form>
+  <app-field
+    label="Description"
+    type="textarea"
+    [value]="description.value()"
+    [touched]="description.touched()"
+    [error]="description.error()"
+    [rows]="3"
+    placeholder="What is this group used for?"
+    (valueChange)="description.value.set($event)"
+    (blur)="description.touched.set(true)" />
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button mat-stroked-button mat-dialog-close>Cancel</button>
-  <button mat-raised-button color="primary" (click)="save()">
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="loading()">
     {{ data ? 'Save changes' : 'Create group' }}
   </button>
 </mat-dialog-actions>

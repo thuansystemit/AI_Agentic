@@ -15,9 +15,10 @@
 <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
   <mat-label>Search users</mat-label>
   <mat-icon matPrefix>search</mat-icon>
-  <input matInput [formControl]="searchCtrl" placeholder="Name or email…" />
-  @if (searchCtrl.value) {
-    <button matSuffix mat-icon-button (click)="searchCtrl.setValue('')" aria-label="Clear search">
+  <input matInput [value]="search()" (input)="search.set($any($event.target).value)"
+         placeholder="Name or email…" />
+  @if (search()) {
+    <button matSuffix mat-icon-button (click)="search.set('')" aria-label="Clear search">
       <mat-icon>close</mat-icon>
     </button>
   }
@@ -70,6 +71,10 @@
                 matTooltip="Edit user" matTooltipPosition="above">
           <mat-icon>edit</mat-icon>
         </button>
+        <button mat-icon-button (click)="openResetPassword(u)"
+                matTooltip="Reset password" matTooltipPosition="above">
+          <mat-icon>lock_reset</mat-icon>
+        </button>
         <button mat-icon-button color="warn" (click)="deleteUser(u)"
                 matTooltip="Delete user" matTooltipPosition="above">
           <mat-icon>delete_outline</mat-icon>
@@ -84,7 +89,7 @@
         <div class="empty-state">
           <mat-icon class="empty-icon">people_outline</mat-icon>
           <h3>No users found</h3>
-          <p>{{ searchCtrl.value ? 'Try a different search term.' : 'Create the first user to get started.' }}</p>
+          <p>{{ search() ? 'Try a different search term.' : 'Create the first user to get started.' }}</p>
         </div>
       }
     </td>
@@ -95,6 +100,6 @@
   <tr mat-footer-row *matFooterRowDef="['noData']" [class.hidden]="users().length > 0"></tr>
 </table>
 
-<mat-paginator [length]="totalElements()" [pageSize]="pageSize"
+<mat-paginator [length]="totalElements()" [pageSize]="pageSize()"
                [pageSizeOptions]="[10, 25, 50]" (page)="onPage($event)"
                showFirstLastButtons />

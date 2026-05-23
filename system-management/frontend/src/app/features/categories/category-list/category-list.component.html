@@ -44,11 +44,14 @@
           <mat-icon>description</mat-icon> Open documents
         </button>
         <span class="card-action-spacer"></span>
-        @if (auth.isAdmin()) {
+
+        @if (canManagePermissions(cat)) {
           <button mat-icon-button (click)="openPermissions(cat)"
                   matTooltip="Manage permissions" matTooltipPosition="above">
             <mat-icon>security</mat-icon>
           </button>
+        }
+        @if (auth.isAdmin()) {
           <button mat-icon-button (click)="openEdit(cat)"
                   matTooltip="Edit category" matTooltipPosition="above">
             <mat-icon>edit</mat-icon>

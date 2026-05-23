@@ -72,7 +72,8 @@ class PermissionServiceTest {
         when(categoryGroupPermissionRepository.findPermissionsByCategoryIdAndGroupIds(categoryId, List.of()))
                 .thenReturn(List.of());
 
-        assertThat(permissionService.hasPermission(userId, categoryId, Permission.READ)).isTrue();
+        // VIEWER with no explicit permission has no access (hidden-category requirement)
+        assertThat(permissionService.hasPermission(userId, categoryId, Permission.READ)).isFalse();
         assertThat(permissionService.hasPermission(userId, categoryId, Permission.WRITE)).isFalse();
     }
 
@@ -129,7 +130,7 @@ class PermissionServiceTest {
         when(categoryGroupPermissionRepository.findPermissionsByCategoryIdAndGroupIds(categoryId, List.of(groupId)))
                 .thenReturn(List.of(Permission.WRITE));
 
-        assertThat(permissionService.resolvePermission(userId, categoryId)).isEqualTo(Permission.WRITE);
+        assertThat(permissionService.resolve(userId, categoryId)).contains(Permission.WRITE);
     }
 
     // EC-02: multiple groups — max wins
@@ -144,6 +145,6 @@ class PermissionServiceTest {
         when(categoryGroupPermissionRepository.findPermissionsByCategoryIdAndGroupIds(categoryId, List.of(g1, g2)))
                 .thenReturn(List.of(Permission.READ, Permission.EDIT));
 
-        assertThat(permissionService.resolvePermission(userId, categoryId)).isEqualTo(Permission.EDIT);
+        assertThat(permissionService.resolve(userId, categoryId)).contains(Permission.EDIT);
     }
 }
