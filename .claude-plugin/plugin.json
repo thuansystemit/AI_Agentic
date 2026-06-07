@@ -1,8 +1,48 @@
 {
   "name": "ai-agentic",
-  "version": "2.1.0",
-  "description": "A full SDLC Claude Code agent framework — 32 specialized agents covering every phase from discovery to operations, each assigned an optimal LLM model, plus 4 skill libraries.",
+  "version": "2.2.0",
+  "description": "A full SDLC Claude Code agent framework — 38 specialized agents covering every phase from discovery to operations, with a context management layer that keeps agents in sync across sessions.",
   "agents": [
+    {
+      "name": "context-manager",
+      "path": "agents/context_management.md",
+      "description": "Cross-agent context manager — scans codebase per agent, compresses prior outputs, injects context slices, and writes session-resume handoffs",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.2,
+      "max_tokens": 8192
+    },
+    {
+      "name": "ba-agent",
+      "path": "agents/ba-agent.md",
+      "description": "SDLC orchestrator — takes raw requirements and drives the full Agile pipeline by delegating to specialist agents at each phase gate",
+      "model": "claude-opus-4-6",
+      "temperature": 0.2,
+      "max_tokens": 8192
+    },
+    {
+      "name": "angular-frontend-engineer",
+      "path": "agents/angular-frontend-engineer.md",
+      "description": "Angular 21 + Material + Bootstrap 5 — signals, zoneless CD, signal forms, CDK accessibility",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.4,
+      "max_tokens": 8096
+    },
+    {
+      "name": "api-tester",
+      "path": "agents/api-tester.md",
+      "description": "REST API smoke-tester — curl-based, cookie auth, PASS/FAIL report per endpoint",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.2,
+      "max_tokens": 8192
+    },
+    {
+      "name": "document-extractor",
+      "path": "agents/document-extractor.md",
+      "description": "Extracts structured data from unstructured documents — CVs, invoices, contracts, forms",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.2,
+      "max_tokens": 4096
+    },
     {
       "name": "architect",
       "path": "agents/architect.md",
