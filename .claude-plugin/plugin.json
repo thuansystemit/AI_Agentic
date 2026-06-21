@@ -1,7 +1,7 @@
 {
   "name": "ai-agentic",
   "version": "2.2.0",
-  "description": "A full SDLC Claude Code agent framework — 38 specialized agents covering every phase from discovery to operations, with a context management layer that keeps agents in sync across sessions.",
+  "description": "A full SDLC Claude Code agent framework — 39 specialized agents covering every phase from discovery to operations, with a context management layer that keeps agents in sync across sessions.",
   "agents": [
     {
       "name": "context-manager",
@@ -306,6 +306,14 @@
       "model": "claude-sonnet-4-6",
       "temperature": 0.3,
       "max_tokens": 4096
+    },
+    {
+      "name": "ocr-extraction-engineer",
+      "path": "agents/ocr-extraction-engineer.md",
+      "description": "Builds and reviews OCR + document-extraction pipelines in Python — vision/LLM extraction, schema design, accuracy evaluation, and code review",
+      "model": "claude-opus-4-6",
+      "temperature": 0.2,
+      "max_tokens": 8192
     }
 
   ],
