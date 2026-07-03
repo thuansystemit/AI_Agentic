@@ -3,7 +3,7 @@
   "name": "AI Agentic Framework",
   "author": "thuanvan",
   "version": "2.2.0",
-  "description": "A full SDLC Claude Code agent framework — 39 specialized agents covering every phase from idea to production, plus a context management layer that scans the codebase per agent, persists decisions across sessions, and resumes work after session expiry.",
+  "description": "A full SDLC Claude Code agent framework — 40 specialized agents covering every phase from idea to production, plus a context management layer that scans the codebase per agent, persists decisions across sessions, and resumes work after session expiry.",
   "tags": ["agents", "sdlc", "context-management", "code-review", "planning", "testing", "spring-boot", "angular", "productivity"],
   "install": "claude plugin add ai-agentic",
   "homepage": "",

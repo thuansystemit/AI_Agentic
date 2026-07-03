@@ -1,7 +1,7 @@
 {
   "name": "ai-agentic",
   "version": "2.2.0",
-  "description": "A full SDLC Claude Code agent framework — 39 specialized agents covering every phase from discovery to operations, with a context management layer that keeps agents in sync across sessions.",
+  "description": "A full SDLC Claude Code agent framework — 40 specialized agents covering every phase from discovery to operations, with a context management layer that keeps agents in sync across sessions.",
   "agents": [
     {
       "name": "context-manager",
@@ -23,6 +23,14 @@
       "name": "angular-frontend-engineer",
       "path": "agents/angular-frontend-engineer.md",
       "description": "Angular 21 + Material + Bootstrap 5 — signals, zoneless CD, signal forms, CDK accessibility",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.4,
+      "max_tokens": 8096
+    },
+    {
+      "name": "react-frontend-engineer",
+      "path": "agents/react-frontend-engineer.md",
+      "description": "React 19 + Next.js 15 App Router — RSC, Server Actions, Tailwind v4 + shadcn/ui, TanStack Query, RHF + Zod, Zustand",
       "model": "claude-sonnet-4-6",
       "temperature": 0.4,
       "max_tokens": 8096
